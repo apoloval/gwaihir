@@ -17,13 +17,14 @@
 package org.oacsd.gwaihir.aircraft.a320.common
 
 import org.oacsd.gwaihir.core.{ConditionEvaluator, SimulationContext, DeviceId, Device}
+import org.oac.gwaihir.core.{StateMachine, StateChangedEvent}
 
 trait SwitchConditions {
   self: ConditionEvaluator =>
 
   /** A condition consisting of the given switch to be in the given state. */
   def switchIs(swId: DeviceId, state: Switch.State) = eventMatch(swId, {
-    case Switch.StateChangedEvent(_, `state`) => true
+    case StateChangedEvent(_, `state`) => true
     case _ => false
   })
 
@@ -34,28 +35,15 @@ trait SwitchConditions {
   def switchIsOff(swId: DeviceId) = switchIs(swId, Switch.SwitchedOff)
 }
 
-class Switch(val id: DeviceId)(implicit val ctx: SimulationContext) extends Device {
+class Switch(val id: DeviceId)(implicit val ctx: SimulationContext)
+      extends Device with StateMachine[Switch.State] {
 
   import Switch._
 
-  var _state: State = SwitchedOff
+  override val initialState = SwitchedOff
 
-  def switchOn() = _state match {
-    case SwitchedOn =>
-    case SwitchedOff =>
-      _state = SwitchedOn
-      ctx.eventChannel.send(id, WasSwitchedOn)
-  }
-
-  def switchOff() = _state match {
-    case SwitchedOn =>
-      _state = SwitchedOff
-      ctx.eventChannel.send(id, WasSwitchedOff)
-    case SwitchedOff =>
-  }
-
-  /** Initialize the device. */
-  def init() = ctx.eventChannel.send(id, WasInitialized)
+  def switchOn() = setState(SwitchedOn)
+  def switchOff() = setState(SwitchedOff)
 }
 
 object Switch {
@@ -65,8 +53,7 @@ object Switch {
   case object SwitchedOff extends State
   val InitialState = SwitchedOff
 
-  case class StateChangedEvent(oldState: Option[State], newState: State)
-  object WasInitialized extends StateChangedEvent(None, InitialState)
-  object WasSwitchedOn extends StateChangedEvent(Some(SwitchedOff), SwitchedOn)
-  object WasSwitchedOff extends StateChangedEvent(Some(SwitchedOn), SwitchedOff)
+  val WasInitialized = StateChangedEvent(None, InitialState)
+  val WasSwitchedOn = StateChangedEvent(Some(SwitchedOff), SwitchedOn)
+  val WasSwitchedOff = StateChangedEvent(Some(SwitchedOn), SwitchedOff)
 }
