@@ -16,50 +16,38 @@
 
 package org.oacsd.gwaihir.aircraft.a320.system.elec
 
-import org.oacsd.gwaihir.core.{Device, SimulationContext, ConditionEvaluator, DeviceId}
+import org.oacsd.gwaihir.core._
 
 import ElectricalSystem._
+import scala.Some
+import org.oac.gwaihir.core.{StateChangedEvent, StateMachine}
 
 trait GeneratorConditions {
 
   self: ConditionEvaluator =>
 
-  /** A condition consisting of the given generator to be on. */
-  def genIsOn(genId: DeviceId) = eventMatch(genId, {
-    case Generator.StateChangedEvent(_, Generator.PowerOn) => true
+  /** A condition consisting of the given generator to be on given state. */
+  def genIs(genId: DeviceId, state: Generator.State) = eventMatch(genId, {
+    case StateChangedEvent(_, `state`) => true
     case _ => false
   })
+
+  /** A condition consisting of the given generator to be on. */
+  def genIsOn(genId: DeviceId) = genIs(genId, Generator.PowerOn)
 
   /** A condition consisting of the given generator to be off. */
-  def genIsOff(genId: DeviceId) = eventMatch(genId, {
-    case Generator.StateChangedEvent(_, Generator.PowerOff) => true
-    case _ => false
-  })
+  def genIsOff(genId: DeviceId) = genIs(genId, Generator.PowerOff)
 }
 
-class Generator(ctx: SimulationContext, val id: DeviceId) extends Device {
+class Generator(val ctx: SimulationContext, val id: DeviceId) extends Device
+    with SimulationContextAware with StateMachine[Generator.State] {
 
   import Generator._
 
-  var _state: State = PowerOff
+  override val initialState = PowerOff
 
-  override def init() = ctx.eventChannel.send(id, WasInitialized)
-
-  def state = _state
-
-  def powerOn() = _state match {
-    case PowerOn =>
-    case PowerOff =>
-      _state = PowerOn
-      ctx.eventChannel.send(id, WasPoweredOn)
-  }
-
-  def powerOff() = _state match {
-    case PowerOn =>
-      _state = PowerOff
-      ctx.eventChannel.send(id, WasPoweredOff)
-    case PowerOff =>
-  }
+  def powerOn() = setState(PowerOn)
+  def powerOff() = setState(PowerOff)
 }
 
 class GenOne()(implicit ctx: SimulationContext) extends Generator(ctx, GenOneId)
@@ -74,8 +62,7 @@ object Generator {
   case object PowerOff extends State
   val InitialState = PowerOff
 
-  case class StateChangedEvent(oldState: Option[State], newState: State)
-  object WasInitialized extends StateChangedEvent(None, InitialState)
-  object WasPoweredOn extends StateChangedEvent(Some(PowerOff), PowerOn)
-  object WasPoweredOff extends StateChangedEvent(Some(PowerOn), PowerOff)
+  val WasInitialized = StateChangedEvent(None, InitialState)
+  val WasPoweredOn = StateChangedEvent(Some(PowerOff), PowerOn)
+  val WasPoweredOff = StateChangedEvent(Some(PowerOn), PowerOff)
 }

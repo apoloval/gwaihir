@@ -19,6 +19,7 @@ package org.oacsd.gwaihir.aircraft.a320.system.elec
 import org.oacsd.gwaihir.core._
 
 import ElectricalSystem._
+import org.oac.gwaihir.core.{StateChangedEvent, StateMachine}
 
 /** A trait providing matching conditions for events sent by contactors. */
 trait ContactorConditions {
@@ -27,7 +28,7 @@ trait ContactorConditions {
 
   /** A condition consisting of the given contactor to be in the given state. */
   def contIs(contId: DeviceId, state: Contactor.State) = eventMatch(contId, {
-    case Contactor.StateChangedEvent(_, `state`) => true
+    case StateChangedEvent(_, `state`) => true
     case _ => false
   })
 
@@ -43,35 +44,20 @@ trait ContactorConditions {
   }
 }
 
-abstract class Contactor(ctx: SimulationContext, val id: DeviceId)
-    extends Device with ConditionEvaluator with ElectricalSystemConditions {
+abstract class Contactor(val ctx: SimulationContext, val id: DeviceId) extends Device
+    with SimulationContextAware with StateMachine[Contactor.State]
+    with ConditionEvaluator with ElectricalSystemConditions {
 
   import Contactor._
 
+  override val initialState = Contactor.Open
   override val channel: EventChannel = ctx.eventChannel
 
   override def whenConditionIsMet = close()
   override def whenConditionIsNotMet = open()
 
-  var _state: State = Open
-
-  override def init() = ctx.eventChannel.send(id, WasInitialized)
-
-  def state = _state
-
-  def open() = _state match {
-    case Open =>
-    case Closed =>
-      _state = Open
-      ctx.eventChannel.send(id, WasOpened)
-  }
-
-  def close() = _state match {
-    case Open =>
-      _state = Closed
-      ctx.eventChannel.send(id, WasClosed)
-    case Closed =>
-  }
+  def open() = setState(Open)
+  def close() = setState(Closed)
 }
 
 class GenOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, GenOneContId) {
@@ -118,8 +104,7 @@ object Contactor {
   case object Closed extends State
   val InitialState = Open
 
-  case class StateChangedEvent(oldState: Option[State], newState: State)
-  object WasInitialized extends StateChangedEvent(None, InitialState)
-  object WasClosed extends StateChangedEvent(Some(Open), Closed)
-  object WasOpened extends StateChangedEvent(Some(Closed), Open)
+  val WasInitialized = StateChangedEvent(None, InitialState)
+  val WasClosed = StateChangedEvent(Some(Open), Closed)
+  val WasOpened = StateChangedEvent(Some(Closed), Open)
 }

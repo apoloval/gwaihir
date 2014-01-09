@@ -19,6 +19,7 @@ package org.oacsd.gwaihir.aircraft.a320.system.elec
 import org.oacsd.gwaihir.core._
 
 import ElectricalSystem._
+import org.oac.gwaihir.core.{StateChangedEvent, StateMachine}
 
 /** A trait providing matching conditions for events sent by buses. */
 trait BusConditions {
@@ -26,7 +27,7 @@ trait BusConditions {
 
   /** A condition consistent of the given bus to be in the given state. */
   def busIs(busId: DeviceId, state: Bus.State) = eventMatch(busId, {
-    case Bus.StateChangedEvent(_, `state`) => true
+    case StateChangedEvent(_, `state`) => true
     case _ => false
   })
 
@@ -37,11 +38,13 @@ trait BusConditions {
   def busIsUnenergized(busId: DeviceId) = busIs(busId, Bus.Unenergized)
 }
 
-abstract class Bus(ctx: SimulationContext, val id: DeviceId)
-    extends Device with ConditionEvaluator with ContactorConditions {
+abstract class Bus(val ctx: SimulationContext, val id: DeviceId) extends Device
+    with SimulationContextAware with StateMachine[Bus.State]
+    with ConditionEvaluator with ElectricalSystemConditions {
 
   import Bus._
 
+  override val initialState = Bus.Unenergized
   override val channel: EventChannel = ctx.eventChannel
 
   override def init() = ctx.eventChannel.send(id, WasInitialized)
@@ -49,22 +52,8 @@ abstract class Bus(ctx: SimulationContext, val id: DeviceId)
   override def whenConditionIsMet = power()
   override def whenConditionIsNotMet = unpower()
 
-  var _state: State = InitialState
-  def state = _state
-
-  def power() = _state match {
-    case Energized =>
-    case Unenergized =>
-      _state = Energized
-      ctx.eventChannel.send(id, WasEnergized)
-  }
-
-  def unpower() = _state match {
-    case Energized =>
-      _state = Unenergized
-      ctx.eventChannel.send(id, WasUnenergized)
-    case Unenergized =>
-  }
+  def power() = setState(Energized)
+  def unpower() = setState(Unenergized)
 }
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
@@ -82,8 +71,7 @@ object Bus {
   case object Unenergized extends State
   val InitialState = Unenergized
 
-  case class StateChangedEvent(oldState: Option[State], newState: State)
-  object WasInitialized extends StateChangedEvent(None, InitialState)
-  object WasEnergized extends StateChangedEvent(Some(Unenergized), Energized)
-  object WasUnenergized extends StateChangedEvent(Some(Energized), Unenergized)
+  val WasInitialized = StateChangedEvent(None, InitialState)
+  val WasEnergized = StateChangedEvent(Some(Unenergized), Energized)
+  val WasUnenergized = StateChangedEvent(Some(Energized), Unenergized)
 }

@@ -22,6 +22,11 @@ trait SimulationContext {
   val taskExecutor: TaskExecutor
 }
 
+trait SimulationContextAware {
+
+  val ctx: SimulationContext
+}
+
 object SimulationContext {
 
   def apply() = new SimulationContext {
