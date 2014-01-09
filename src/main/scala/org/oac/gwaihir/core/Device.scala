@@ -17,7 +17,7 @@
 package org.oacsd.gwaihir.core
 
 /** An object representing an aircraft device being simulated. */
-trait Device {
+trait Device extends SimulationContextAware {
 
   /** Obtain the ID for this device. */
   def id: DeviceId

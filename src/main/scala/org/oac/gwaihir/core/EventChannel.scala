@@ -47,6 +47,12 @@ trait EventChannel {
   def send(sender: DeviceId, event: Any)
 }
 
+/** An object able to provide a event channel. */
+trait EventChannelProvider {
+
+  def eventChannel: EventChannel
+}
+
 /**
  * Tree-like implementation of event channel.
  *

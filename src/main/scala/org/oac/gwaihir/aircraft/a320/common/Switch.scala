@@ -34,7 +34,7 @@ trait SwitchConditions {
   def switchIsOff(swId: DeviceId) = switchIs(swId, Switch.SwitchedOff)
 }
 
-class Switch(val id: DeviceId)(implicit ctx: SimulationContext) extends Device {
+class Switch(val id: DeviceId)(implicit val ctx: SimulationContext) extends Device {
 
   import Switch._
 

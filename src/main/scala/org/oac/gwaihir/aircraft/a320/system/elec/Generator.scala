@@ -39,8 +39,8 @@ trait GeneratorConditions {
   def genIsOff(genId: DeviceId) = genIs(genId, Generator.PowerOff)
 }
 
-class Generator(val ctx: SimulationContext, val id: DeviceId) extends Device
-    with SimulationContextAware with StateMachine[Generator.State] {
+class Generator(val ctx: SimulationContext, val id: DeviceId)
+    extends Device with StateMachine[Generator.State] {
 
   import Generator._
 

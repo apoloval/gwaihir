@@ -19,7 +19,8 @@ package org.oacsd.gwaihir.core
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.MustMatchers
 
-case class DummyEvaluator(channel: EventChannel) extends ConditionEvaluator {
+case class DummyEvaluator(eventChannel: EventChannel)
+    extends ConditionEvaluator with EventChannelProvider {
   val dev1 = DeviceId("foobar/dev1")
   val dev2 = DeviceId("foobar/dev2")
 

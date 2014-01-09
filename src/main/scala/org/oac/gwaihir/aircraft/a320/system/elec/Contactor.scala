@@ -44,14 +44,13 @@ trait ContactorConditions {
   }
 }
 
-abstract class Contactor(val ctx: SimulationContext, val id: DeviceId) extends Device
-    with SimulationContextAware with StateMachine[Contactor.State]
+abstract class Contactor(val ctx: SimulationContext, val id: DeviceId)
+    extends Device with StateMachine[Contactor.State]
     with ConditionEvaluator with ElectricalSystemConditions {
 
   import Contactor._
 
   override val initialState = Contactor.Open
-  override val channel: EventChannel = ctx.eventChannel
 
   override def whenConditionIsMet = close()
   override def whenConditionIsNotMet = open()

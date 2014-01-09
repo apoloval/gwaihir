@@ -22,9 +22,10 @@ trait SimulationContext {
   val taskExecutor: TaskExecutor
 }
 
-trait SimulationContextAware {
+trait SimulationContextAware extends EventChannelProvider {
 
   val ctx: SimulationContext
+  lazy val eventChannel = ctx.eventChannel
 }
 
 object SimulationContext {

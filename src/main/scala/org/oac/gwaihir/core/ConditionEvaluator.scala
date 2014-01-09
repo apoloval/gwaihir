@@ -72,14 +72,16 @@ case class EventMatchCondition(
 }
 
 trait ConditionEvaluator {
-  val channel: EventChannel
+
+  self: EventChannelProvider =>
+
   val condition: Condition
 
   def whenConditionIsMet: Unit
   def whenConditionIsNotMet: Unit
 
   def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Boolean]) =
-    new EventMatchCondition(this, channel, dev, pred)
+    new EventMatchCondition(this, eventChannel, dev, pred)
 
   private [core] def eval() {
     condition.eval match {

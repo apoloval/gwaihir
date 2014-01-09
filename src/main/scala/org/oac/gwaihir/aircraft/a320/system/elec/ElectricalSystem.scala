@@ -25,14 +25,15 @@ trait ElectricalSystemConditions
   with BusConditions
   with SwitchConditions { self: ConditionEvaluator => }
 
-class ElectricalSystem(implicit ctx: SimulationContext) extends Device {
+class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
 
   import ElectricalSystem._
 
   override val id = Id
 
-  object ac extends DeviceSystem {
+  val ac = new DeviceSystem {
 
+    override implicit val ctx = ElectricalSystem.this.ctx
     override val id = AcSubsystemId
 
     val genOne = newDevice(new GenOne())
@@ -50,8 +51,9 @@ class ElectricalSystem(implicit ctx: SimulationContext) extends Device {
     val acEssFeedAltContactor = newDevice(new AcEssFeedAltContactor())
   }
 
-  object panel extends DeviceSystem {
+  val panel = new DeviceSystem {
 
+    override implicit val ctx = ElectricalSystem.this.ctx
     override val id = PanelSubsystemId
 
     val acEssFeedSwitch = newDevice(new Switch(AcEssFeedSwitchId))

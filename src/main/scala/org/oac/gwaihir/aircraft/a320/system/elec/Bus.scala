@@ -38,14 +38,13 @@ trait BusConditions {
   def busIsUnenergized(busId: DeviceId) = busIs(busId, Bus.Unenergized)
 }
 
-abstract class Bus(val ctx: SimulationContext, val id: DeviceId) extends Device
-    with SimulationContextAware with StateMachine[Bus.State]
+abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
+    extends Device with StateMachine[Bus.State]
     with ConditionEvaluator with ElectricalSystemConditions {
 
   import Bus._
 
   override val initialState = Bus.Unenergized
-  override val channel: EventChannel = ctx.eventChannel
 
   override def init() = ctx.eventChannel.send(id, WasInitialized)
 
