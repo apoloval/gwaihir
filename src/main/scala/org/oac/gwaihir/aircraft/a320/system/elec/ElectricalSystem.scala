@@ -14,10 +14,10 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.aircraft.a320.system.elec
+package org.oac.gwaihir.aircraft.a320.system.elec
 
-import org.oacsd.gwaihir.core._
-import org.oacsd.gwaihir.aircraft.a320.common.{SwitchConditions, Switch}
+import org.oac.gwaihir.aircraft.a320.common.{SwitchConditions, Switch}
+import org.oac.gwaihir.core._
 
 trait ElectricalSystemConditions
   extends ContactorConditions
@@ -85,4 +85,6 @@ object ElectricalSystem {
   val GenTwoContId = AcSubsystemId / "Gen2Cont"
   val ExtPowerId = AcSubsystemId / "ExtPower"
   val ExtPowerContId = AcSubsystemId / "ExtPowerCont"
+  val TrOneId = AcSubsystemId / "Tr1"
+  val TrTwoId = AcSubsystemId / "Tr2"
 }

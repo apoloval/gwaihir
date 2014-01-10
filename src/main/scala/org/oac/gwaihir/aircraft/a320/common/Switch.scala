@@ -14,10 +14,9 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.aircraft.a320.common
+package org.oac.gwaihir.aircraft.a320.common
 
-import org.oacsd.gwaihir.core.{ConditionEvaluator, SimulationContext, DeviceId, Device}
-import org.oac.gwaihir.core.{StateMachine, StateChangedEvent}
+import org.oac.gwaihir.core._
 
 trait SwitchConditions {
   self: ConditionEvaluator =>

@@ -16,8 +16,6 @@
 
 package org.oac.gwaihir.core
 
-import org.oacsd.gwaihir.core.{SimulationContextAware, Device}
-
 case class StateChangedEvent[State](from: Option[State], to: State)
 
 /** An object that behaves as a state machine. */

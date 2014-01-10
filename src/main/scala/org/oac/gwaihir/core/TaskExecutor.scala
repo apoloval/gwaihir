@@ -14,10 +14,10 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.core
+package org.oac.gwaihir.core
 
-import scala.concurrent.duration.Duration
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
 
 /** An object able to execute tasks with form of Scala functions. */
 trait TaskExecutor {

@@ -14,15 +14,15 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.aircraft.a320.system.elec
+package org.oac.gwaihir.aircraft.a320.system.elec
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.MustMatchers
-import org.oacsd.gwaihir.core.{EventChannel, SimulationContext}
+
+import org.oac.gwaihir.core.SimulationContext
 
 class ContactorTest extends FlatSpec with MustMatchers {
 
-  import ElectricalSystem._
 
   "GEN 1 contactor" must "close when GEN 1 is on" in new ElecSystemInitialized {
     sys.ac.genOneContactor.state must be (Contactor.Open)

@@ -14,12 +14,11 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.aircraft.a320.system.elec
+package org.oac.gwaihir.aircraft.a320.system.elec
 
-import org.oacsd.gwaihir.core._
+import org.oac.gwaihir.core._
 
 import ElectricalSystem._
-import org.oac.gwaihir.core.{StateChangedEvent, StateMachine}
 
 /** A trait providing matching conditions for events sent by contactors. */
 trait ContactorConditions {

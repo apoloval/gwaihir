@@ -14,7 +14,7 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.core
+package org.oac.gwaihir.core
 
 /**
  * An channel to notify device events.

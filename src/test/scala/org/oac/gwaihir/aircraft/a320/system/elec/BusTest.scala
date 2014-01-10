@@ -14,11 +14,12 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.aircraft.a320.system.elec
+package org.oac.gwaihir.aircraft.a320.system.elec
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.MustMatchers
-import org.oacsd.gwaihir.core.SimulationContext
+
+import org.oac.gwaihir.core.SimulationContext
 
 class BusTest extends FlatSpec with MustMatchers {
 

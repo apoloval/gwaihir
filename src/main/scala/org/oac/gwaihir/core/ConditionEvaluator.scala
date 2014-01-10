@@ -14,7 +14,7 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oacsd.gwaihir.core
+package org.oac.gwaihir.core
 
 trait Condition {
   def eval: Option[Boolean]
