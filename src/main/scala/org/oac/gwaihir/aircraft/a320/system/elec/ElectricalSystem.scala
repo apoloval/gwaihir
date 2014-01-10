@@ -36,19 +36,21 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     override implicit val ctx = ElectricalSystem.this.ctx
     override val id = AcSubsystemId
 
-    val genOne = newDevice(new GenOne())
-    val genTwo = newDevice(new GenTwo())
-    val apuGen = newDevice(new ApuGen())
-    val extPower = newDevice(new ExtPower())
-    val busOne = newDevice(new AcBusOne())
-    val busTwo = newDevice(new AcBusTwo())
-    val genOneContactor = newDevice(new GenOneContactor())
-    val genTwoContactor = newDevice(new GenTwoContactor())
-    val apuGenContactor = newDevice(new ApuGenContactor())
-    val extPowerContactor = newDevice(new ExtPowerContactor())
-    val busTieContactor = newDevice(new BusTieContactor())
     val acEssFeedNormContactor = newDevice(new AcEssFeedNormContactor())
     val acEssFeedAltContactor = newDevice(new AcEssFeedAltContactor())
+    val apuGen = newDevice(new ApuGen())
+    val apuGenContactor = newDevice(new ApuGenContactor())
+    val busOne = newDevice(new AcBusOne())
+    val busTieContactor = newDevice(new BusTieContactor())
+    val busTwo = newDevice(new AcBusTwo())
+    val extPower = newDevice(new ExtPower())
+    val extPowerContactor = newDevice(new ExtPowerContactor())
+    val genOne = newDevice(new GenOne())
+    val genOneContactor = newDevice(new GenOneContactor())
+    val genTwo = newDevice(new GenTwo())
+    val genTwoContactor = newDevice(new GenTwoContactor())
+    val trOne = newDevice(new TrOne())
+    val trTwo = newDevice(new TrTwo())
   }
 
   val panel = new DeviceSystem {
