@@ -40,21 +40,22 @@ abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId
 
   import TransformerRectifier._
 
-  override val initialState = Unpowered
+  override def initialState = Unpowered
 
-  override def whenConditionIsMet = power()
-  override def whenConditionIsNotMet = unpower()
+  def trIsPowered: Condition
 
   def power() = setState(Powered)
   def unpower() = setState(Unpowered)
+
+  watch(trIsPowered) { power() } { unpower() }
 }
 
 class TrOne(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrOneId) {
-  override val condition = busIsEnergized(AcBusOneId)
+  override def trIsPowered = busIsEnergized(AcBusOneId)
 }
 
 class TrTwo(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrTwoId) {
-  override val condition = busIsEnergized(AcBusTwoId)
+  override def trIsPowered = busIsEnergized(AcBusTwoId)
 }
 
 object TransformerRectifier {

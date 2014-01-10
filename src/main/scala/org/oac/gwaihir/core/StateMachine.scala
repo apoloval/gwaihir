@@ -25,10 +25,10 @@ trait StateMachine[State] {
 
   private var _state: State = initialState
 
-  /** The initial state of the machine. */
-  val initialState: State
-
   override def init() = ctx.eventChannel.send(id, StateChangedEvent(None, initialState))
+
+  /** The initial state of the machine. */
+  def initialState: State
 
   /** Retreieve the current state of the machine. */
   def state = _state

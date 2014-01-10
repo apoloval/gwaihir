@@ -40,31 +40,36 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 
   import Bus._
 
-  override val initialState = Bus.Unenergized
+  override def initialState = Bus.Unenergized
+
+  def busIsEnergized: Condition
 
   override def init() = ctx.eventChannel.send(id, WasInitialized)
 
-  override def whenConditionIsMet = power()
-  override def whenConditionIsNotMet = unpower()
-
   def power() = setState(Energized)
   def unpower() = setState(Unenergized)
+
+  watch(busIsEnergized) { power() } { unpower() }
 }
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
-  val condition = contIsClosed(GenOneContId) or contIsClosed(BusTieContId)
+
+  def busIsEnergized = contIsClosed(GenOneContId) or contIsClosed(BusTieContId)
 }
 
 class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
-  val condition = contIsClosed(GenTwoContId) or contIsClosed(BusTieContId)
+
+  def busIsEnergized = contIsClosed(GenTwoContId) or contIsClosed(BusTieContId)
 }
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {
-  val condition = contIsClosed(TrOneContactorId)
+
+  def busIsEnergized = contIsClosed(TrOneContactorId)
 }
 
 class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
-  val condition = contIsClosed(TrTwoContactorId)
+
+  def busIsEnergized = contIsClosed(TrTwoContactorId)
 }
 
 object Bus {

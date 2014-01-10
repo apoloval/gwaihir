@@ -20,16 +20,16 @@ import org.scalatest.{Matchers, FlatSpec}
 
 case class DummyEvaluator(eventChannel: EventChannel)
     extends ConditionEvaluator with EventChannelProvider {
+
   val dev1 = DeviceId("foobar/dev1")
   val dev2 = DeviceId("foobar/dev2")
 
   var matches: Option[Boolean] = None
 
-  def whenConditionIsMet { matches = Some(true) }
-  def whenConditionIsNotMet { matches = Some(false) }
-
   val condition = eventMatch(dev1, { case (isOn: Boolean) => isOn }) and
     eventMatch(dev2, { case (power: Int) => power > 100 })
+
+  watch(condition) { matches = Some(true) } { matches = Some(false) }
 }
 
 class ConditionEvaluatorTest extends FlatSpec with Matchers {

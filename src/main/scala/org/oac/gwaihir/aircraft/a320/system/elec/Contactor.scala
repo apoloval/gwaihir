@@ -35,7 +35,7 @@ trait ContactorConditions {
   def contIsClosed(contId: DeviceId) = contIs(contId, Contactor.Closed)
 
   /** A condition consisting of any of the given contactors to be closed. */
-  def anyContIsClosed(contId: DeviceId*) = contId.foldLeft[Condition](FalseCondition) {
+  def anyContIsClosed(contId: DeviceId*) = contId.foldLeft[Condition](new FalseCondition) {
     (cond, dev) => cond or contIsClosed(dev)
   }
 }
@@ -48,56 +48,63 @@ abstract class Contactor(val ctx: SimulationContext, val id: DeviceId)
 
   override val initialState = Contactor.Open
 
-  override def whenConditionIsMet = close()
-  override def whenConditionIsNotMet = open()
+  def contactorIsClosed: Condition
 
   def open() = setState(Open)
   def close() = setState(Closed)
+
+  watch(contactorIsClosed) { close() } { open() }
 }
 
 class GenOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, GenOneContId) {
-  override val condition = genIsOn(GenOneId)
+
+  override def contactorIsClosed = genIsOn(GenOneId)
 }
 
 class GenTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, GenTwoContId) {
-  override val condition = genIsOn(GenTwoId)
+
+  override def contactorIsClosed = genIsOn(GenTwoId)
 }
 
 class ApuGenContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, ApuGenContId) {
-  override val condition =
-    genIsOn(ApuGenId) and
-      contIsOpen(GenOneContId) and
-      contIsOpen(GenTwoContId) and
-      contIsOpen(ExtPowerContId)
+
+  override def contactorIsClosed = genIsOn(ApuGenId) and contIsOpen(GenOneContId) and
+      contIsOpen(GenTwoContId) and contIsOpen(ExtPowerContId)
 }
 
 class ExtPowerContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, ExtPowerContId) {
-  override val condition =
+
+  override def contactorIsClosed =
     genIsOn(ExtPowerId) and contIsOpen(GenOneContId) and contIsOpen(GenTwoContId)
 }
 
 class BusTieContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, BusTieContId) {
-  override val condition =
+
+  override def contactorIsClosed =
     anyContIsClosed(GenOneContId, GenTwoContId, ApuGenContId, ExtPowerContId) and
     (contIsOpen(GenOneContId) or contIsOpen(GenTwoContId))
 }
 
 class AcEssFeedNormContactor()(implicit ctx: SimulationContext)
     extends Contactor(ctx, AcEssFeedNormContactorId) {
-  override val condition = busIsEnergized(AcBusOneId) and switchIsOff(AcEssFeedSwitchId)
+
+  override def contactorIsClosed = busIsEnergized(AcBusOneId) and switchIsOff(AcEssFeedSwitchId)
 }
 
 class AcEssFeedAltContactor()(implicit ctx: SimulationContext)
     extends Contactor(ctx, AcEssFeedAltContactorId) {
-  override val condition = busIsEnergized(AcBusTwoId) and switchIsOn(AcEssFeedSwitchId)
+
+  override def contactorIsClosed = busIsEnergized(AcBusTwoId) and switchIsOn(AcEssFeedSwitchId)
 }
 
 class TrOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrOneContactorId) {
-  override val condition = trIsPowered(TrOneId)
+
+  override def contactorIsClosed = trIsPowered(TrOneId)
 }
 
 class TrTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrTwoContactorId) {
-  override val condition = trIsPowered(TrTwoId)
+
+  override def contactorIsClosed = trIsPowered(TrTwoId)
 }
 
 object Contactor {

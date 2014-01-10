@@ -39,7 +39,7 @@ class Switch(val id: DeviceId)(implicit val ctx: SimulationContext)
 
   import Switch._
 
-  override val initialState = SwitchedOff
+  override def initialState = SwitchedOff
 
   def switchOn() = setState(SwitchedOn)
   def switchOff() = setState(SwitchedOff)

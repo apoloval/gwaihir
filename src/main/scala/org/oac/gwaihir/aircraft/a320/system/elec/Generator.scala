@@ -39,7 +39,7 @@ class Generator(val ctx: SimulationContext, val id: DeviceId)
 
   import Generator._
 
-  override val initialState = PowerOff
+  override def initialState = PowerOff
 
   def powerOn() = setState(PowerOn)
   def powerOff() = setState(PowerOff)
