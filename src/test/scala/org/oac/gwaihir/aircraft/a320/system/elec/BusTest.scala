@@ -47,4 +47,18 @@ class BusTest extends FlatSpec with Matchers {
     exec.loop()
     sys.ac.busTwo.state should be (Bus.Energized)
   }
+
+  "DC BUS 1" must "be energized when TR1 contactor is closed" in new ColdAndDarkSystem {
+    sys.dc.busOne.state should be (Bus.Unenergized)
+    sys.dc.trOneContactor.close()
+    exec.loop()
+    sys.dc.busOne.state should be (Bus.Energized)
+  }
+
+  "DC BUS 2" must "be energized when TR2 contactor is closed" in new ColdAndDarkSystem {
+    sys.dc.busTwo.state should be (Bus.Unenergized)
+    sys.dc.trTwoContactor.close()
+    exec.loop()
+    sys.dc.busTwo.state should be (Bus.Energized)
+  }
 }

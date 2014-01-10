@@ -59,6 +59,14 @@ class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
   val condition = contIsClosed(GenTwoContId) or contIsClosed(BusTieContId)
 }
 
+class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {
+  val condition = contIsClosed(TrOneContactorId)
+}
+
+class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
+  val condition = contIsClosed(TrTwoContactorId)
+}
+
 object Bus {
 
   sealed trait State

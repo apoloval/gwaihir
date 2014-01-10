@@ -51,8 +51,17 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     val genTwo = newDevice(new GenTwo())
     val genTwoContactor = newDevice(new GenTwoContactor())
     val trOne = newDevice(new TrOne())
-    val trOneContactor = newDevice(new TrOneContactor())
     val trTwo = newDevice(new TrTwo())
+  }
+
+  val dc = new DeviceSystem {
+
+    override implicit val ctx = ElectricalSystem.this.ctx
+    override val id = DcSubsystemId
+
+    val busOne = newDevice(new DcBusOne())
+    val busTwo = newDevice(new DcBusTwo())
+    val trOneContactor = newDevice(new TrOneContactor())
     val trTwoContactor = newDevice(new TrTwoContactor())
   }
 
@@ -74,13 +83,14 @@ object ElectricalSystem {
 
   val Id = DeviceId("/System/Elec")
   val AcSubsystemId = Id / "Ac"
+  val DcSubsystemId = Id / "Dc"
   val PanelSubsystemId = Id / "Panel"
 
-  val AcBusOneId = AcSubsystemId / "AcBus1"
-  val AcBusTwoId = AcSubsystemId / "AcBus2"
-  val AcEssFeedSwitchId = AcSubsystemId / "AcEssFeedSwitch"
-  val AcEssFeedNormContactorId = AcSubsystemId / "AcEssFeedNormCont"
-  val AcEssFeedAltContactorId = AcSubsystemId / "AcEssFeedAltCont"
+  val AcBusOneId = AcSubsystemId / "Bus1"
+  val AcBusTwoId = AcSubsystemId / "Bus2"
+  val AcEssFeedSwitchId = AcSubsystemId / "EssFeedSwitch"
+  val AcEssFeedNormContactorId = AcSubsystemId / "EssFeedNormCont"
+  val AcEssFeedAltContactorId = AcSubsystemId / "EssFeedAltCont"
   val ApuGenId = AcSubsystemId / "ApuGen"
   val ApuGenContId = AcSubsystemId / "ApuGenCont"
   val BusTieContId = AcSubsystemId / "BusTieCont"
@@ -94,4 +104,7 @@ object ElectricalSystem {
   val TrOneContactorId = AcSubsystemId / "Tr1Cont"
   val TrTwoId = AcSubsystemId / "Tr2"
   val TrTwoContactorId = AcSubsystemId / "Tr2Cont"
+
+  val DcBusOneId = DcSubsystemId / "Bus1"
+  val DcBusTwoId = DcSubsystemId / "Bus2"
 }

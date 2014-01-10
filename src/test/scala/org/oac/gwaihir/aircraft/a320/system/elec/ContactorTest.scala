@@ -145,16 +145,16 @@ class ContactorTest extends FlatSpec with Matchers {
   }
 
   "TR1 contactor" must "close when TR1 is operating" in new ColdAndDarkSystem {
-    sys.ac.trOneContactor.state should be (Contactor.Open)
+    sys.dc.trOneContactor.state should be (Contactor.Open)
     sys.ac.trOne.power()
     exec.loop()
-    sys.ac.trOneContactor.state should be (Contactor.Closed)
+    sys.dc.trOneContactor.state should be (Contactor.Closed)
   }
 
   "TR2 contactor" must "close when TR2 is operating" in new ColdAndDarkSystem {
-    sys.ac.trTwoContactor.state should be (Contactor.Open)
+    sys.dc.trTwoContactor.state should be (Contactor.Open)
     sys.ac.trTwo.power()
     exec.loop()
-    sys.ac.trTwoContactor.state should be (Contactor.Closed)
+    sys.dc.trTwoContactor.state should be (Contactor.Closed)
   }
 }
