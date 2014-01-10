@@ -20,6 +20,20 @@ import org.oac.gwaihir.core._
 
 import ElectricalSystem._
 
+trait TransformerRectifierConditions {
+
+  self: ConditionEvaluator =>
+
+  /** A condition consisting of the given TR to be in the given state. */
+  def trIs(trId: DeviceId, state: TransformerRectifier.State) = deviceIs(trId, state)
+
+  /** A condition consisting of the given TR to be powered. */
+  def trIsPowered(trId: DeviceId) = deviceIs(trId, TransformerRectifier.Powered)
+
+  /** A condition consisting of the given TR to be unpowered. */
+  def trIsUnpowered(trId: DeviceId) = deviceIs(trId, TransformerRectifier.Unpowered)
+}
+
 abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId) extends Device
     with SimulationContextAware with StateMachine[TransformerRectifier.State]
     with ConditionEvaluator with ElectricalSystemConditions {

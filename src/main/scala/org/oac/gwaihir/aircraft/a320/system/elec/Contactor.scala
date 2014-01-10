@@ -92,6 +92,14 @@ class AcEssFeedAltContactor()(implicit ctx: SimulationContext)
   override val condition = busIsEnergized(AcBusTwoId) and switchIsOn(AcEssFeedSwitchId)
 }
 
+class TrOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrOneContactorId) {
+  override val condition = trIsPowered(TrOneId)
+}
+
+class TrTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrTwoContactorId) {
+  override val condition = trIsPowered(TrTwoId)
+}
+
 object Contactor {
 
   sealed trait State

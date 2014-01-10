@@ -23,7 +23,8 @@ trait ElectricalSystemConditions
   extends ContactorConditions
   with GeneratorConditions
   with BusConditions
-  with SwitchConditions { self: ConditionEvaluator => }
+  with SwitchConditions
+  with TransformerRectifierConditions { self: ConditionEvaluator => }
 
 class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
 
@@ -50,7 +51,9 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     val genTwo = newDevice(new GenTwo())
     val genTwoContactor = newDevice(new GenTwoContactor())
     val trOne = newDevice(new TrOne())
+    val trOneContactor = newDevice(new TrOneContactor())
     val trTwo = newDevice(new TrTwo())
+    val trTwoContactor = newDevice(new TrTwoContactor())
   }
 
   val panel = new DeviceSystem {
@@ -88,5 +91,7 @@ object ElectricalSystem {
   val ExtPowerId = AcSubsystemId / "ExtPower"
   val ExtPowerContId = AcSubsystemId / "ExtPowerCont"
   val TrOneId = AcSubsystemId / "Tr1"
+  val TrOneContactorId = AcSubsystemId / "Tr1Cont"
   val TrTwoId = AcSubsystemId / "Tr2"
+  val TrTwoContactorId = AcSubsystemId / "Tr2Cont"
 }
