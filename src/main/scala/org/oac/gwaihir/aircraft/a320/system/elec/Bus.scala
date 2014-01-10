@@ -25,10 +25,7 @@ trait BusConditions {
   self: ConditionEvaluator =>
 
   /** A condition consistent of the given bus to be in the given state. */
-  def busIs(busId: DeviceId, state: Bus.State) = eventMatch(busId, {
-    case StateChangedEvent(_, `state`) => true
-    case _ => false
-  })
+  def busIs(busId: DeviceId, state: Bus.State) = deviceIs(busId, state)
 
   /** A condition consisting of the given bus to be energized. */
   def busIsEnergized(busId: DeviceId) = busIs(busId, Bus.Energized)

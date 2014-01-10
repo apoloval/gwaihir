@@ -26,10 +26,7 @@ trait ContactorConditions {
   self : ConditionEvaluator =>
 
   /** A condition consisting of the given contactor to be in the given state. */
-  def contIs(contId: DeviceId, state: Contactor.State) = eventMatch(contId, {
-    case StateChangedEvent(_, `state`) => true
-    case _ => false
-  })
+  def contIs(contId: DeviceId, state: Contactor.State) = deviceIs(contId, state)
 
   /** A condition consisting of the given contactor to be open. */
   def contIsOpen(contId: DeviceId) = contIs(contId, Contactor.Open)

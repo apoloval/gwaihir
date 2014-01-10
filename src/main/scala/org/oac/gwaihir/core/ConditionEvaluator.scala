@@ -83,6 +83,11 @@ trait ConditionEvaluator {
   def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Boolean]) =
     new EventMatchCondition(this, eventChannel, dev, pred)
 
+  def deviceIs[State](dev: DeviceId, state: State) = eventMatch(dev, {
+    case StateChangedEvent(_, `state`) => true
+    case _ => false
+  })
+
   private [core] def eval() {
     condition.eval match {
       case Some(true) => whenConditionIsMet

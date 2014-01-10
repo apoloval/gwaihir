@@ -25,10 +25,7 @@ trait GeneratorConditions {
   self: ConditionEvaluator =>
 
   /** A condition consisting of the given generator to be on given state. */
-  def genIs(genId: DeviceId, state: Generator.State) = eventMatch(genId, {
-    case StateChangedEvent(_, `state`) => true
-    case _ => false
-  })
+  def genIs(genId: DeviceId, state: Generator.State) = deviceIs(genId, state)
 
   /** A condition consisting of the given generator to be on. */
   def genIsOn(genId: DeviceId) = genIs(genId, Generator.PowerOn)
