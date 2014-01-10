@@ -121,14 +121,12 @@ case class EventMatchCondition(
   private var evaluation: Option[Boolean] = None
   override def eval = evaluation
 
-  private val onEvent: PartialFunction[(DeviceId, Any), Unit] = {
+  channel.subscribe(dev) {
     case (sender: DeviceId, event: Any) =>
       val prev = evaluation
       evaluation = Some(pred(event))
       if (prev != eval) { informWatcher() }
   }
-
-  channel.subscribe(dev, onEvent)
 }
 
 /** An object that watchs conditions expecting them to be met (or not).

@@ -21,21 +21,21 @@ import org.scalatest.{Matchers, FlatSpec}
 class EventChannelTest extends FlatSpec with Matchers {
 
   "Event channel" must "subscribe and send events" in new FreshChannel {
-    chan.subscribe(acGen1, observe)
+    chan.subscribe(acGen1)(observe)
     chan.send(acGen1, devRunning)
     lastSender should be (Some(acGen1))
     lastEvent should be (Some(devRunning))
   }
 
   it must "send events to subscription on a sender ancestor" in new FreshChannel {
-    chan.subscribe(ac, observe)
+    chan.subscribe(ac)(observe)
     chan.send(acGen1, devRunning)
     lastSender should be (Some(acGen1))
     lastEvent should be (Some(devRunning))
   }
 
   it must "not send events to subscription on a non-sender ancestor" in new FreshChannel {
-    chan.subscribe(ac, observe)
+    chan.subscribe(ac)(observe)
     chan.send(dcEssBus, devRunning)
     lastSender should be (None)
     lastEvent should be (None)

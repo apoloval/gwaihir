@@ -36,7 +36,7 @@ trait EventChannel {
    * The callback function will be invoked every time a event is produced by the given device or
    * any of its children.
    */
-  def subscribe(id: DeviceId, subs: Subscription)
+  def subscribe(id: DeviceId)(subs: Subscription)
 
   /**
    * Send a event produced by the given device to the channel.
@@ -64,12 +64,12 @@ class DeviceTreeEventChannel(dev: DeviceId) extends EventChannel {
   private var children: Map[DeviceId, EventChannel] = Map.empty
   private var subscriptions: Set[EventChannel.Subscription] = Set.empty
 
-  override def subscribe(id: DeviceId, subs: EventChannel.Subscription) = {
+  override def subscribe(id: DeviceId)(subs: EventChannel.Subscription) = {
     require(dev.contains(id), s"cannot subscribe callback for $id on a channel managing $dev")
     if (id.equals(dev)) subscriptions += subs
     else channelFor(id)
       .getOrElse(initChannelFor(id))
-      .subscribe(id, subs)
+      .subscribe(id)(subs)
   }
 
   override def send(sender: DeviceId, event: Any) = {
@@ -108,9 +108,12 @@ class TaskExecutorEventChannel(
     delegate: EventChannel,
     executor: TaskExecutor) extends EventChannel {
 
-  def subscribe(id: DeviceId, subs: EventChannel.Subscription) = delegate.subscribe(id, subs)
+  override def subscribe(id: DeviceId)(subs: EventChannel.Subscription) =
+    delegate.subscribe(id)(subs)
 
-  def send(sender: DeviceId, event: Any) = executor.submit { delegate.send(sender, event) }
+  override def send(sender: DeviceId, event: Any) = executor.submit {
+    delegate.send(sender, event)
+  }
 }
 
 object EventChannel {
