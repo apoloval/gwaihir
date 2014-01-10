@@ -19,45 +19,33 @@ package org.oac.gwaihir.aircraft.a320.system.elec
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.MustMatchers
 
-import org.oac.gwaihir.core.SimulationContext
-
 class BusTest extends FlatSpec with MustMatchers {
 
-  "AC BUS 1" must "be energized when GEN 1 contactor is closed" in new ElecSystemInitialized {
+  "AC BUS 1" must "be energized when GEN 1 contactor is closed" in new ColdAndDarkSystem {
     sys.ac.busOne.state must be (Bus.Unenergized)
     sys.ac.genOneContactor.close()
     exec.loop()
     sys.ac.busOne.state must be (Bus.Energized)
   }
 
-  it must "be energized when BUS TIE contactor is closed" in new ElecSystemInitialized {
+  it must "be energized when BUS TIE contactor is closed" in new ColdAndDarkSystem {
     sys.ac.busOne.state must be (Bus.Unenergized)
     sys.ac.busTieContactor.close()
     exec.loop()
     sys.ac.busOne.state must be (Bus.Energized)
   }
 
-  "AC BUS 2" must "be energized when GEN 2 contactor is closed" in new ElecSystemInitialized {
+  "AC BUS 2" must "be energized when GEN 2 contactor is closed" in new ColdAndDarkSystem {
     sys.ac.busTwo.state must be (Bus.Unenergized)
     sys.ac.genTwoContactor.close()
     exec.loop()
     sys.ac.busTwo.state must be (Bus.Energized)
   }
 
-  it must "be energized when BUS TIE contactor is closed" in new ElecSystemInitialized {
+  it must "be energized when BUS TIE contactor is closed" in new ColdAndDarkSystem {
     sys.ac.busTwo.state must be (Bus.Unenergized)
     sys.ac.busTieContactor.close()
     exec.loop()
     sys.ac.busTwo.state must be (Bus.Energized)
-  }
-
-  trait ElecSystemInitialized {
-
-    implicit val ctx = SimulationContext()
-    val channel = ctx.eventChannel
-    val exec = ctx.taskExecutor
-    val sys = new ElectricalSystem()
-    sys.init()
-    exec.loop()
   }
 }
