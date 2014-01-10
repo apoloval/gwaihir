@@ -18,17 +18,16 @@ package org.oac.gwaihir.core
 
 import scala.concurrent.duration._
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.{Matchers, FlatSpec}
 
-class TaskExecutorTest extends FlatSpec with MustMatchers {
+class TaskExecutorTest extends FlatSpec with Matchers {
 
   "Task executor" must "execute a submitted task after loop" in new ExecutorInitialized {
     var taskDone = false
     exec.submit { taskDone = true }
-    taskDone must be (false)
+    taskDone should be (false)
     exec.loop()
-    taskDone must be (true)
+    taskDone should be (true)
   }
 
   it must "execute scheduled task on time" in new ExecutorInitialized {
@@ -36,7 +35,7 @@ class TaskExecutorTest extends FlatSpec with MustMatchers {
     var execOn = 0l
     exec.schedule(100.milliseconds) { execOn = System.currentTimeMillis() }
     exec.loop()
-    (execOn - submittedOn) must be >= 100l
+    (execOn - submittedOn) should be >= 100l
   }
 
   it must "execute immediate task before one scheduled on future" in new ExecutorInitialized {
@@ -46,8 +45,8 @@ class TaskExecutorTest extends FlatSpec with MustMatchers {
     exec.schedule(100.milliseconds) { scheduledDoneOn = System.currentTimeMillis() }
     exec.submit { immediateDoneOn = System.currentTimeMillis() }
     exec.loop()
-    (immediateDoneOn - submittedOn) must be < 10l
-    (scheduledDoneOn - submittedOn) must be >= 100l
+    (immediateDoneOn - submittedOn) should be < 10l
+    (scheduledDoneOn - submittedOn) should be >= 100l
   }
 
   it must "support events submitted from tasks" in new ExecutorInitialized {
@@ -64,8 +63,8 @@ class TaskExecutorTest extends FlatSpec with MustMatchers {
     var submittedOn = System.currentTimeMillis()
     exec.schedule(50.milliseconds)(incToTen)
     exec.loop()
-    i must be (10)
-    (doneOn - submittedOn) must be >= 500l
+    i should be (10)
+    (doneOn - submittedOn) should be >= 500l
   }
 
   trait ExecutorInitialized {

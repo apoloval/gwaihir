@@ -16,8 +16,7 @@
 
 package org.oac.gwaihir.core
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.{Matchers, FlatSpec}
 
 case class DummyEvaluator(eventChannel: EventChannel)
     extends ConditionEvaluator with EventChannelProvider {
@@ -33,40 +32,40 @@ case class DummyEvaluator(eventChannel: EventChannel)
     eventMatch(dev2, { case (power: Int) => power > 100 })
 }
 
-class ConditionEvaluatorTest extends FlatSpec with MustMatchers {
+class ConditionEvaluatorTest extends FlatSpec with Matchers {
 
   "Event evaluator" must "consider undetermined matching when no event is sent" in
     new EvaluatorInitialized {
-      eval.matches must be (None)
+      eval.matches should be (None)
     }
 
   it must "consider undetermined matching when some events have not been sent" in
     new EvaluatorInitialized {
       channel.send(eval.dev1, true)
-      eval.matches must be (None)
+      eval.matches should be (None)
     }
 
   it must "consider not matching when not all conditions are met" in
     new EvaluatorInitialized {
       channel.send(eval.dev1, true)
       channel.send(eval.dev2, 10)
-      eval.matches must be (Some(false))
+      eval.matches should be (Some(false))
     }
 
   it must "consider matching when all conditions are met" in
     new EvaluatorInitialized {
       channel.send(eval.dev1, true)
       channel.send(eval.dev2, 110)
-      eval.matches must be (Some(true))
+      eval.matches should be (Some(true))
     }
 
   it must "consider not matching when any conditions is not met anymore" in
     new EvaluatorInitialized {
       channel.send(eval.dev1, true)
       channel.send(eval.dev2, 110)
-      eval.matches must be (Some(true))
+      eval.matches should be (Some(true))
       channel.send(eval.dev2, 10)
-      eval.matches must be (Some(false))
+      eval.matches should be (Some(false))
     }
 
   trait EvaluatorInitialized {

@@ -16,36 +16,35 @@
 
 package org.oac.gwaihir.core
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.{Matchers, FlatSpec}
 
-class EventChannelTest extends FlatSpec with MustMatchers {
+class EventChannelTest extends FlatSpec with Matchers {
 
   "Event channel" must "subscribe and send events" in new FreshChannel {
     chan.subscribe(acGen1, observe)
     chan.send(acGen1, devRunning)
-    lastSender must be (Some(acGen1))
-    lastEvent must be (Some(devRunning))
+    lastSender should be (Some(acGen1))
+    lastEvent should be (Some(devRunning))
   }
 
   it must "send events to subscription on a sender ancestor" in new FreshChannel {
     chan.subscribe(ac, observe)
     chan.send(acGen1, devRunning)
-    lastSender must be (Some(acGen1))
-    lastEvent must be (Some(devRunning))
+    lastSender should be (Some(acGen1))
+    lastEvent should be (Some(devRunning))
   }
 
   it must "not send events to subscription on a non-sender ancestor" in new FreshChannel {
     chan.subscribe(ac, observe)
     chan.send(dcEssBus, devRunning)
-    lastSender must be (None)
-    lastEvent must be (None)
+    lastSender should be (None)
+    lastEvent should be (None)
   }
 
   it must "not send anything when no subscription is done" in new FreshChannel {
     chan.send(dcEssBus, devRunning)
-    lastSender must be (None)
-    lastEvent must be (None)
+    lastSender should be (None)
+    lastEvent should be (None)
   }
 
   case class DummyEvent(msg: String)

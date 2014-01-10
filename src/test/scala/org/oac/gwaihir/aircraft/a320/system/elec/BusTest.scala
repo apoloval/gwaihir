@@ -16,36 +16,35 @@
 
 package org.oac.gwaihir.aircraft.a320.system.elec
 
-import org.scalatest.FlatSpec
-import org.scalatest.matchers.MustMatchers
+import org.scalatest.{Matchers, FlatSpec}
 
-class BusTest extends FlatSpec with MustMatchers {
+class BusTest extends FlatSpec with Matchers {
 
   "AC BUS 1" must "be energized when GEN 1 contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busOne.state must be (Bus.Unenergized)
+    sys.ac.busOne.state should be (Bus.Unenergized)
     sys.ac.genOneContactor.close()
     exec.loop()
-    sys.ac.busOne.state must be (Bus.Energized)
+    sys.ac.busOne.state should be (Bus.Energized)
   }
 
   it must "be energized when BUS TIE contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busOne.state must be (Bus.Unenergized)
+    sys.ac.busOne.state should be (Bus.Unenergized)
     sys.ac.busTieContactor.close()
     exec.loop()
-    sys.ac.busOne.state must be (Bus.Energized)
+    sys.ac.busOne.state should be (Bus.Energized)
   }
 
   "AC BUS 2" must "be energized when GEN 2 contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busTwo.state must be (Bus.Unenergized)
+    sys.ac.busTwo.state should be (Bus.Unenergized)
     sys.ac.genTwoContactor.close()
     exec.loop()
-    sys.ac.busTwo.state must be (Bus.Energized)
+    sys.ac.busTwo.state should be (Bus.Energized)
   }
 
   it must "be energized when BUS TIE contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busTwo.state must be (Bus.Unenergized)
+    sys.ac.busTwo.state should be (Bus.Unenergized)
     sys.ac.busTieContactor.close()
     exec.loop()
-    sys.ac.busTwo.state must be (Bus.Energized)
+    sys.ac.busTwo.state should be (Bus.Energized)
   }
 }
