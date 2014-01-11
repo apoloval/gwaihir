@@ -45,6 +45,9 @@ abstract class Condition {
 
   /** Create a new logic-or condition from this one and the one passed as argument.  */
   def or(c: Condition) = new OrCondition(this, c)
+
+  /** Create a new logic-xor condition from this one and the one passed as argument.  */
+  def xor(c: Condition) = new XorCondition(this, c)
 }
 
 /** A condition that can be evaluated without comprising any other condition. */
@@ -98,6 +101,18 @@ case class OrCondition(c1: Condition, c2: Condition) extends CompositeCondition(
     case (_, None) => None
     case (Some(_), Some(true)) => Some(true)
     case (Some(true), Some(_)) => Some(true)
+    case _ => Some(false)
+  }
+}
+
+/** A condition that evaluates to the logic-xor of the result of two other conditions. */
+case class XorCondition(c1: Condition, c2: Condition) extends CompositeCondition(c1, c2) {
+
+  override def eval: Option[Boolean] = (c1.eval, c2.eval) match {
+    case (None, _) => None
+    case (_, None) => None
+    case (Some(false), Some(true)) => Some(true)
+    case (Some(true), Some(false)) => Some(true)
     case _ => Some(false)
   }
 }

@@ -61,6 +61,8 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
 
     val busOne = newDevice(new DcBusOne())
     val busTwo = newDevice(new DcBusTwo())
+    val tieOneContactor = newDevice(new DcTieOneContactor())
+    val tieTwoContactor = newDevice(new DcTieTwoContactor())
     val trOneContactor = newDevice(new TrOneContactor())
     val trTwoContactor = newDevice(new TrTwoContactor())
   }
@@ -75,6 +77,7 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
 
   override def init() {
     ac.init()
+    dc.init()
     panel.init()
   }
 }
@@ -107,4 +110,6 @@ object ElectricalSystem {
 
   val DcBusOneId = DcSubsystemId / "Bus1"
   val DcBusTwoId = DcSubsystemId / "Bus2"
+  val DcTieOneContId = DcSubsystemId / "Tie1Cont"
+  val DcTieTwoContId = DcSubsystemId / "Tie2Cont"
 }

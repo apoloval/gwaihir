@@ -107,6 +107,16 @@ class TrTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, T
   override def contactorIsClosed = trIsPowered(TrTwoId)
 }
 
+class DcTieOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcTieOneContId) {
+
+  override def contactorIsClosed = busIsEnergized(DcBusOneId) or busIsEnergized(DcBusTwoId)
+}
+
+class DcTieTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcTieTwoContId) {
+
+  override def contactorIsClosed = busIsEnergized(DcBusOneId) xor busIsEnergized(DcBusTwoId)
+}
+
 object Contactor {
 
   sealed trait State

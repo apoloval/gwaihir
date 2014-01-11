@@ -157,4 +157,18 @@ class ContactorTest extends FlatSpec with Matchers {
     exec.loop()
     sys.dc.trTwoContactor.state should be (Contactor.Closed)
   }
+
+  "Bus tie 1 contactor" must "close when DC BUS 1 is energized" in new ColdAndDarkSystem {
+    sys.dc.tieOneContactor.state should be (Contactor.Open)
+    sys.dc.busOne.power()
+    exec.loop()
+    sys.dc.tieOneContactor.state should be (Contactor.Closed)
+  }
+
+  it must "close when DC BUS 2 is energized regardless DC BUS 1 state" in new ColdAndDarkSystem {
+    sys.dc.tieOneContactor.state should be (Contactor.Open)
+    sys.dc.busTwo.power()
+    exec.loop()
+    sys.dc.tieOneContactor.state should be (Contactor.Closed)
+  }
 }
