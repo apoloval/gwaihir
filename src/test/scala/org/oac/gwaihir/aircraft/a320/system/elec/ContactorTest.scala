@@ -107,7 +107,7 @@ class ContactorTest extends FlatSpec with Matchers {
     sys.ac.busTieContactor.state should be (Contactor.Open)
   }
 
-  it must "close when any GEN is powered off" in new ColdAndDarkSystem {
+  it must "close when any GEN is powered on" in new ColdAndDarkSystem {
     sys.ac.busTieContactor.state should be (Contactor.Open)
     sys.ac.genOne.powerOn()
     exec.loop()
