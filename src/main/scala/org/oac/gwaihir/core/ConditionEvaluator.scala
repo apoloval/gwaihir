@@ -18,10 +18,10 @@ package org.oac.gwaihir.core
 
 /** A condition that may be evaluated by a condition watcher.
   *
-  * Objects of these class are used to evaluate conditions that may derive in two actions to
-  * be triggered: one when the condition is met and other when the condition is not met.
-  * Conditions are watched by ConditionWatcher objects. If the condition changes, the watcher
-  * is requested to watch it by evaluating and executing the corresponding action.
+  * Objects of these class are used to evaluate conditions that may derive in an action to
+  * be triggered when the condition is met. Conditions are watched by ConditionWatcher objects.
+  * If the condition changes, the watchers are requested to watch it by evaluating and executing
+  * the corresponding action if the condition matches.
   */
 abstract class Condition {
 
@@ -33,12 +33,12 @@ abstract class Condition {
     */
   def eval: Option[Boolean]
 
-  /** Set the watcher for this condition.
+  /** Add a watcher for this condition.
     *
-    * Conditions are responsible of notifying the watcher when they change. This function may be
-    * used to set the watcher that will be notified when the condition changes.
+    * Conditions are responsible of notifying the watchers when they change. This function may be
+    * used to add a new watcher that will be notified when the condition changes.
     */
-  def setWatcher(w: ConditionWatcher)
+  def addWatcher(w: ConditionWatcher)
 
   /** Create a new logic-and condition from this one and the one passed as argument.  */
   def and(c: Condition) = new AndCondition(this, c)
@@ -53,17 +53,17 @@ abstract class Condition {
 /** A condition that can be evaluated without comprising any other condition. */
 abstract class SingleCondition extends Condition {
 
-  var watcher: Option[ConditionWatcher] = None
+  var watchers: Set[ConditionWatcher] = Set.empty
 
-  override def setWatcher(w: ConditionWatcher) { watcher = Some(w) }
+  override def addWatcher(w: ConditionWatcher) { watchers += w }
 
-  protected def informWatcher() = if (watcher.isDefined) { watcher.get.watch() }
+  protected def informWatchers() = watchers.foreach(_.watch())
 }
 
 /** A condition that is evaluated by some other conditions. */
 abstract class CompositeCondition(c: Condition*) extends Condition {
 
-  override def setWatcher(w: ConditionWatcher) = c.foreach(_.setWatcher(w))
+  override def addWatcher(w: ConditionWatcher) = c.foreach(_.addWatcher(w))
 }
 
 /** A condition that always evaluates to true. */
@@ -120,13 +120,12 @@ case class XorCondition(c1: Condition, c2: Condition) extends CompositeCondition
 /** A condition that evaluates based on the last value of a event.
   *
   * This condition object listens on a channel for events on a determined device. It uses a
-  * predicate to determine whether the event met or not the condition. When a change is
-  * detected in the condition, the watcher is requested to watch the condition (what will
-  * cause the met/not met action to be executed).
+  * predicate to determine whether the event met or not the condition. When the event evaluation
+  * changes respect the last evaluated value, the watcher is requested to watch the condition.
   *
   * @param channel The event channel to listen for events
   * @param dev The device which events are to be matched
-  * @param pred The predicate that determines whether the condition is met or not
+  * @param pred The predicate that determines whether the condition is met
   */
 case class EventMatchCondition(
     channel: EventChannel,
@@ -140,25 +139,23 @@ case class EventMatchCondition(
     case (sender: DeviceId, event: Any) =>
       val prev = evaluation
       evaluation = Some(pred(event))
-      if (prev != eval) { informWatcher() }
+      if (prev != eval) { informWatchers() }
   }
 }
 
-/** An object that watchs conditions expecting them to be met (or not).
+/** An object that watchs conditions expecting them to be met.
   *
   * @param cond The condition to watch
   * @param whenMet The action to be executed when condition is met
-  * @param whenNotMet The action to be executed when condition is not met
   */
-class ConditionWatcher(cond: Condition, whenMet: => Unit, whenNotMet: => Unit) {
+class ConditionWatcher(cond: Condition, whenMet: => Unit) {
 
   def watch() = cond.eval match {
     case Some(true) => whenMet
-    case Some(false) => whenNotMet
     case _ => ()
   }
 
-  cond.setWatcher(this)
+  cond.addWatcher(this)
 }
 
 /** A trait for objects able to watch conditions. */
@@ -168,14 +165,22 @@ trait ConditionEvaluator {
 
   private var watchers: Set[ConditionWatcher] = Set.empty
 
-  def watch(cond: Condition)(whenMet: => Unit)(whenNotMet: => Unit) =
-    watchers += new ConditionWatcher(cond, whenMet, whenNotMet)
+  def not(cond: Condition): Condition = new NotCondition(cond)
 
-  def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Boolean]) =
+  def watch(cond: Condition)(whenMet: => Unit) =
+    watchers += new ConditionWatcher(cond, whenMet)
+
+  def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Boolean]): Condition =
     new EventMatchCondition(eventChannel, dev, pred)
 
-  def deviceIs[State](dev: DeviceId, state: State) = eventMatch(dev, {
+  def deviceIs[State](dev: DeviceId, state: State): Condition = eventMatch(dev, {
     case StateChangedEvent(_, `state`) => true
     case _ => false
   })
+
+  def deviceIs[State : Manifest](dev: DeviceId)(pred: PartialFunction[State, Boolean]): Condition =
+    eventMatch(dev, {
+      case StateChangedEvent(_, s: State) => pred(s)
+      case _ => false
+    })
 }

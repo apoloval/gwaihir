@@ -108,6 +108,8 @@ object ElectricalSystem {
   val TrTwoId = AcSubsystemId / "Tr2"
   val TrTwoContactorId = AcSubsystemId / "Tr2Cont"
 
+  val BatteryOneId = DcSubsystemId / "Battery1"
+  val BatteryTwoId = DcSubsystemId / "Battery2"
   val DcBusOneId = DcSubsystemId / "Bus1"
   val DcBusTwoId = DcSubsystemId / "Bus2"
   val DcTieOneContId = DcSubsystemId / "Tie1Cont"

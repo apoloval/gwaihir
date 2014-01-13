@@ -42,6 +42,20 @@ trait StateMachine[State] {
     case (s1, s2) if s1 != s2 =>
       _state = s2
       ctx.eventChannel.send(id, StateChangedEvent(Some(s1), s2))
+      if (onStateChange != null) { onStateChange(s1, s2) }
     case _ =>
+  }
+
+  protected def onStateChange: PartialFunction[(State, State), Unit] = null
+}
+
+class StateWatcher[State : Manifest](val eventChannel: EventChannel, dev: DeviceId)
+  extends ConditionEvaluator with EventChannelProvider {
+
+  var state: Option[State] = None
+
+  eventChannel.subscribe(dev) {
+    case (_, StateChangedEvent(_, s: State)) => state = Some(s)
+    case _ => ()
   }
 }

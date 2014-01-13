@@ -47,7 +47,8 @@ abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId
   def power() = setState(Powered)
   def unpower() = setState(Unpowered)
 
-  watch(trIsPowered) { power() } { unpower() }
+  watch(trIsPowered) { power() }
+  watch(not(trIsPowered)) { unpower() }
 }
 
 class TrOne(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrOneId) {

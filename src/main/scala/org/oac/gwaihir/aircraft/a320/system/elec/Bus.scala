@@ -28,7 +28,14 @@ trait BusConditions {
   def busIs(busId: DeviceId, state: Bus.State) = deviceIs(busId, state)
 
   /** A condition consisting of the given bus to be energized. */
-  def busIsEnergized(busId: DeviceId) = busIs(busId, Bus.Energized)
+  def busIsEnergized(busId: DeviceId) = deviceIs[Bus.State](busId) {
+    case Bus.Energized(_) => true
+    case _ => false
+  }
+
+  /** A condition consisting of the given bus to be energized by given supplier. */
+  def busIsEnergizedBy(busId: DeviceId, supplierId: DeviceId) =
+    busIs(busId, Bus.Energized(supplierId))
 
   /** A condition consisting of the given bus to be unenergized. */
   def busIsUnenergized(busId: DeviceId) = busIs(busId, Bus.Unenergized)
@@ -42,40 +49,61 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 
   override def initialState = Bus.Unenergized
 
-  def busIsEnergized: Condition
-
   override def init() = ctx.eventChannel.send(id, WasInitialized)
 
-  def power() = setState(Energized)
+  def power(by: DeviceId) = setState(Energized(by))
   def unpower() = setState(Unenergized)
 
-  watch(busIsEnergized) { power() } { unpower() }
+  protected def watchPoweredByContactor(contId: DeviceId) = watch(contIsClosed(contId)) {
+    power(contId)
+  }
+
+  protected def watchUnpoweredByContactors(contIds: DeviceId*) = {
+    val allContsAreOpen = contIds.foldLeft[Condition](new TrueCondition) {
+      (c, cont) => c and contIsOpen(cont)
+    }
+    watch(allContsAreOpen) { unpower() }
+  }
+
+  /** Watch that the bus is powered by any of the given contactors.
+    *
+    * If any of these contactors is closed, the bus determines it is powered by that contactor.
+    * If all of them are open, the bus determines it is unpowered.
+    */
+  protected def watchPoweredByContactors(contIds: DeviceId*) = {
+    contIds.foreach(cont => watchPoweredByContactor(cont))
+    watchUnpoweredByContactors(contIds: _*)
+  }
 }
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
 
-  def busIsEnergized = contIsClosed(GenOneContId) or contIsClosed(BusTieContId)
+  watchPoweredByContactor(GenOneContId)
+  watch(contIsClosed(BusTieContId) and contIsOpen(GenOneContId)) { power(BusTieContId) }
+  watchUnpoweredByContactors(GenOneContId, BusTieContId)
 }
 
 class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
-  def busIsEnergized = contIsClosed(GenTwoContId) or contIsClosed(BusTieContId)
+  watchPoweredByContactor(GenTwoContId)
+  watch(contIsClosed(BusTieContId) and contIsOpen(GenTwoContId)) { power(BusTieContId) }
+  watchUnpoweredByContactors(GenTwoContId, BusTieContId)
 }
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {
 
-  def busIsEnergized = contIsClosed(TrOneContactorId)
+  watchPoweredByContactors(TrOneContactorId)
 }
 
 class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
 
-  def busIsEnergized = contIsClosed(TrTwoContactorId)
+  watchPoweredByContactors(TrTwoContactorId)
 }
 
 object Bus {
 
   sealed trait State
-  case object Energized extends State
+  case class Energized(by: DeviceId) extends State
   case object Unenergized extends State
   val InitialState = Unenergized
 

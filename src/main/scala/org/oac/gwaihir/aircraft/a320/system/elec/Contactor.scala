@@ -53,7 +53,8 @@ abstract class Contactor(val ctx: SimulationContext, val id: DeviceId)
   def open() = setState(Open)
   def close() = setState(Closed)
 
-  watch(contactorIsClosed) { close() } { open() }
+  watch(contactorIsClosed) { close() }
+  watch(not(contactorIsClosed)) { open() }
 }
 
 class GenOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, GenOneContId) {

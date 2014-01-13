@@ -29,7 +29,8 @@ case class DummyEvaluator(eventChannel: EventChannel)
   val condition = eventMatch(dev1, { case (isOn: Boolean) => isOn }) and
     eventMatch(dev2, { case (power: Int) => power > 100 })
 
-  watch(condition) { matches = Some(true) } { matches = Some(false) }
+  watch(condition) { matches = Some(true) }
+  watch(not(condition)) { matches = Some(false) }
 }
 
 class ConditionEvaluatorTest extends FlatSpec with Matchers {
