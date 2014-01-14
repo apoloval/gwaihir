@@ -59,7 +59,7 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
   }
 
   protected def watchUnpoweredByContactors(contIds: DeviceId*) = {
-    val allContsAreOpen = contIds.foldLeft[Condition](new TrueCondition) {
+    val allContsAreOpen = contIds.foldLeft[Condition](TrueCondition) {
       (c, cont) => c and contIsOpen(cont)
     }
     watch(allContsAreOpen) { unpower() }

@@ -25,20 +25,17 @@ package org.oac.gwaihir.core
   */
 abstract class Condition {
 
+  type Context = Map[DeviceId, Any]
+
+  def conditionedBy: Seq[DeviceId]
+
   /** Evaluate the condition.
     *
     * This function is invoked by the watcher to determine whether the condition is met
     * (Some(true)) or not (Some(false)). It may return None if the condition cannot be determined
     * by some reason (i.e. no enough information is still available).
     */
-  def eval: Option[Boolean]
-
-  /** Add a watcher for this condition.
-    *
-    * Conditions are responsible of notifying the watchers when they change. This function may be
-    * used to add a new watcher that will be notified when the condition changes.
-    */
-  def addWatcher(w: ConditionWatcher)
+  def eval(ctx: Context): Option[Boolean]
 
   /** Create a new logic-and condition from this one and the one passed as argument.  */
   def and(c: Condition) = new AndCondition(this, c)
@@ -50,41 +47,54 @@ abstract class Condition {
   def xor(c: Condition) = new XorCondition(this, c)
 }
 
-/** A condition that can be evaluated without comprising any other condition. */
-abstract class SingleCondition extends Condition {
+/** A condition that depends not in any other condition. */
+abstract class NullaryCondition extends Condition {
 
-  var watchers: Set[ConditionWatcher] = Set.empty
-
-  override def addWatcher(w: ConditionWatcher) { watchers += w }
-
-  protected def informWatchers() = watchers.foreach(_.watch())
+  override def conditionedBy = Seq.empty
 }
 
-/** A condition that is evaluated by some other conditions. */
-abstract class CompositeCondition(c: Condition*) extends Condition {
+/** A condition that depends on another condition. */
+abstract class UnaryCondition extends Condition {
 
-  override def addWatcher(w: ConditionWatcher) = c.foreach(_.addWatcher(w))
+  def c: Condition
+
+  override def conditionedBy = c.conditionedBy
+}
+
+/** A condition that depends in other two conditions. */
+abstract class BinaryCondition extends Condition {
+
+  def c1: Condition
+  def c2: Condition
+
+  override def conditionedBy = c1.conditionedBy ++ c2.conditionedBy
 }
 
 /** A condition that always evaluates to true. */
-final class TrueCondition extends SingleCondition { def eval = Some(true) }
+final object TrueCondition extends NullaryCondition {
+
+  def eval(ctx: Context) = Some(true)
+}
 
 /** A condition that always evaluates to false. */
-final class FalseCondition extends SingleCondition { def eval = Some(false) }
+final object FalseCondition extends NullaryCondition {
+
+  def eval(ctx: Context) = Some(false)
+}
 
 /** A condition that evaluates to the negation of the result of another condition. */
-final class NotCondition(c: Condition) extends CompositeCondition(c) {
+final case class NotCondition(c: Condition) extends UnaryCondition {
 
-  override def eval: Option[Boolean] = c.eval match {
+  override def eval(ctx: Context): Option[Boolean] = c.eval(ctx) match {
     case None => None
     case Some(x) => Some(!x)
   }
 }
 
 /** A condition that evaluates to the logic-and of the result of two other conditions. */
-case class AndCondition(c1: Condition, c2: Condition) extends CompositeCondition(c1, c2) {
+final case class AndCondition(c1: Condition, c2: Condition) extends BinaryCondition {
 
-  override def eval: Option[Boolean] = (c1.eval, c2.eval) match {
+  override def eval(ctx: Context): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
     case (None, _) => None
     case (_, None) => None
     case (Some(_), Some(false)) => Some(false)
@@ -94,9 +104,9 @@ case class AndCondition(c1: Condition, c2: Condition) extends CompositeCondition
 }
 
 /** A condition that evaluates to the logic-or of the result of two other conditions. */
-case class OrCondition(c1: Condition, c2: Condition) extends CompositeCondition(c1, c2) {
+case class OrCondition(c1: Condition, c2: Condition) extends BinaryCondition {
 
-  override def eval: Option[Boolean] = (c1.eval, c2.eval) match {
+  override def eval(ctx: Context): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
     case (None, _) => None
     case (_, None) => None
     case (Some(_), Some(true)) => Some(true)
@@ -106,9 +116,9 @@ case class OrCondition(c1: Condition, c2: Condition) extends CompositeCondition(
 }
 
 /** A condition that evaluates to the logic-xor of the result of two other conditions. */
-case class XorCondition(c1: Condition, c2: Condition) extends CompositeCondition(c1, c2) {
+case class XorCondition(c1: Condition, c2: Condition) extends BinaryCondition {
 
-  override def eval: Option[Boolean] = (c1.eval, c2.eval) match {
+  override def eval(ctx: Context): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
     case (None, _) => None
     case (_, None) => None
     case (Some(false), Some(true)) => Some(true)
@@ -123,23 +133,17 @@ case class XorCondition(c1: Condition, c2: Condition) extends CompositeCondition
   * predicate to determine whether the event met or not the condition. When the event evaluation
   * changes respect the last evaluated value, the watcher is requested to watch the condition.
   *
-  * @param channel The event channel to listen for events
   * @param dev The device which events are to be matched
   * @param pred The predicate that determines whether the condition is met
   */
-case class EventMatchCondition(
-    channel: EventChannel,
-    dev: DeviceId,
-    pred: PartialFunction[Any, Boolean]) extends SingleCondition {
+case class EventMatchCondition(dev: DeviceId)
+                              (pred: PartialFunction[Any, Boolean]) extends Condition {
 
-  private var evaluation: Option[Boolean] = None
-  override def eval = evaluation
+  override def conditionedBy = Seq(dev)
 
-  channel.subscribe(dev) {
-    case (sender: DeviceId, event: Any) =>
-      val prev = evaluation
-      evaluation = Some(pred(event))
-      if (prev != eval) { informWatchers() }
+  override def eval(ctx: Context) = ctx.get(dev) match {
+    case Some(event) => Some(pred(event))
+    case None => None
   }
 }
 
@@ -148,14 +152,21 @@ case class EventMatchCondition(
   * @param cond The condition to watch
   * @param whenMet The action to be executed when condition is met
   */
-class ConditionWatcher(cond: Condition, whenMet: => Unit) {
+class ConditionWatcher(eventChannel: EventChannel, cond: Condition, whenMet: => Unit) {
 
-  def watch() = cond.eval match {
-    case Some(true) => whenMet
-    case _ => ()
+  var ctx: Map[DeviceId, Any] = Map.empty
+
+  cond.conditionedBy.foreach { dev =>
+    eventChannel.subscribe(dev)(onNewEvent)
   }
 
-  cond.addWatcher(this)
+  private def onNewEvent: EventChannel.Subscription = {
+    case (sender, event) =>
+      ctx += sender -> event
+      if (cond.eval(ctx).getOrElse(false)) { whenMet }
+      ()
+    case _ => ()
+  }
 }
 
 /** A trait for objects able to watch conditions. */
@@ -168,10 +179,10 @@ trait ConditionEvaluator {
   def not(cond: Condition): Condition = new NotCondition(cond)
 
   def watch(cond: Condition)(whenMet: => Unit) =
-    watchers += new ConditionWatcher(cond, whenMet)
+    watchers += new ConditionWatcher(eventChannel, cond, whenMet)
 
   def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Boolean]): Condition =
-    new EventMatchCondition(eventChannel, dev, pred)
+    new EventMatchCondition(dev)(pred)
 
   def deviceIs[State](dev: DeviceId, state: State): Condition = eventMatch(dev, {
     case StateChangedEvent(_, `state`) => true
