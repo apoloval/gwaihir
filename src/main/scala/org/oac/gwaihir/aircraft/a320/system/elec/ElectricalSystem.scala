@@ -42,8 +42,9 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     val apuGen = newDevice(new ApuGen())
     val apuGenContactor = newDevice(new ApuGenContactor())
     val busOne = newDevice(new AcBusOne())
-    val busTieContactor = newDevice(new BusTieContactor())
+    val busOneTieContactor = newDevice(new AcBusOneTieContactor())
     val busTwo = newDevice(new AcBusTwo())
+    val busTwoTieContactor = newDevice(new AcBusTwoTieContactor())
     val extPower = newDevice(new ExtPower())
     val extPowerContactor = newDevice(new ExtPowerContactor())
     val genOne = newDevice(new GenOne())
@@ -90,13 +91,14 @@ object ElectricalSystem {
   val PanelSubsystemId = Id / "Panel"
 
   val AcBusOneId = AcSubsystemId / "Bus1"
+  val AcBusOneTieContId = AcSubsystemId / "Bus1TieCont"
   val AcBusTwoId = AcSubsystemId / "Bus2"
+  val AcBusTwoTieContId = AcSubsystemId / "Bus2TieCont"
   val AcEssFeedSwitchId = AcSubsystemId / "EssFeedSwitch"
   val AcEssFeedNormContactorId = AcSubsystemId / "EssFeedNormCont"
   val AcEssFeedAltContactorId = AcSubsystemId / "EssFeedAltCont"
   val ApuGenId = AcSubsystemId / "ApuGen"
   val ApuGenContId = AcSubsystemId / "ApuGenCont"
-  val BusTieContId = AcSubsystemId / "BusTieCont"
   val GenOneId = AcSubsystemId / "Gen1"
   val GenOneContId = AcSubsystemId / "Gen1Cont"
   val GenTwoId = AcSubsystemId / "Gen2"

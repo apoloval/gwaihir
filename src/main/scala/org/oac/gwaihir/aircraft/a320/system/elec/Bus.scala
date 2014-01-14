@@ -79,15 +79,15 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
 
   watchPoweredByContactor(GenOneContId)
-  watch(contIsClosed(BusTieContId) and contIsOpen(GenOneContId)) { power(BusTieContId) }
-  watchUnpoweredByContactors(GenOneContId, BusTieContId)
+  watch(contIsClosed(AcBusOneTieContId) and contIsOpen(GenOneContId)) { power(AcBusOneTieContId) }
+  watchUnpoweredByContactors(GenOneContId, AcBusOneTieContId)
 }
 
 class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
   watchPoweredByContactor(GenTwoContId)
-  watch(contIsClosed(BusTieContId) and contIsOpen(GenTwoContId)) { power(BusTieContId) }
-  watchUnpoweredByContactors(GenTwoContId, BusTieContId)
+  watch(contIsClosed(AcBusTwoTieContId) and contIsOpen(GenTwoContId)) { power(AcBusTwoTieContId) }
+  watchUnpoweredByContactors(GenTwoContId, AcBusTwoTieContId)
 }
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {

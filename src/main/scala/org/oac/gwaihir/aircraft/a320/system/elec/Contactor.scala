@@ -35,8 +35,23 @@ trait ContactorConditions {
   def contIsClosed(contId: DeviceId) = contIs(contId, Contactor.Closed)
 
   /** A condition consisting of any of the given contactors to be closed. */
-  def anyContIsClosed(contId: DeviceId*) = contId.foldLeft[Condition](new FalseCondition) {
+  def anyContIsClosed(contId: DeviceId*) = contId.foldLeft[Condition](FalseCondition) {
     (cond, dev) => cond or contIsClosed(dev)
+  }
+
+  /** A condition consisting of any of the given contactors to be open. */
+  def anyContIsOpen(contId: DeviceId*) = contId.foldLeft[Condition](FalseCondition) {
+    (cond, dev) => cond or contIsOpen(dev)
+  }
+
+  /** A condition consisting of none of the given contactors to be closed. */
+  def noneContIsClosed(contId: DeviceId*) = contId.foldLeft[Condition](TrueCondition) {
+    (cond, dev) => cond and contIsOpen(dev)
+  }
+
+  /** A condition consisting of none of the given contactors to be closed. */
+  def noneContIsOpen(contId: DeviceId*) = contId.foldLeft[Condition](TrueCondition) {
+    (cond, dev) => cond and contIsClosed(dev)
   }
 }
 
@@ -46,7 +61,7 @@ abstract class Contactor(val ctx: SimulationContext, val id: DeviceId)
 
   import Contactor._
 
-  override val initialState = Contactor.Open
+  override def initialState = Contactor.Open
 
   def contactorIsClosed: Condition
 
@@ -69,21 +84,35 @@ class GenTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, 
 
 class ApuGenContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, ApuGenContId) {
 
-  override def contactorIsClosed = genIsOn(ApuGenId) and contIsOpen(GenOneContId) and
-      contIsOpen(GenTwoContId) and contIsOpen(ExtPowerContId)
+  override def contactorIsClosed = genIsOn(ApuGenId) and contIsOpen(ExtPowerContId) and
+    anyContIsOpen(GenOneContId, GenTwoContId)
 }
 
 class ExtPowerContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, ExtPowerContId) {
 
-  override def contactorIsClosed =
-    genIsOn(ExtPowerId) and contIsOpen(GenOneContId) and contIsOpen(GenTwoContId)
+  override def contactorIsClosed = genIsOn(ExtPowerId) and anyContIsOpen(GenOneContId, GenTwoContId)
 }
 
-class BusTieContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, BusTieContId) {
+class AcBusOneTieContactor()(implicit ctx: SimulationContext)
+    extends Contactor(ctx, AcBusOneTieContId) {
 
-  override def contactorIsClosed =
-    anyContIsClosed(GenOneContId, GenTwoContId, ApuGenContId, ExtPowerContId) and
-    (contIsOpen(GenOneContId) or contIsOpen(GenTwoContId))
+  private def flowLeftToRight =
+    contIsClosed(GenOneContId) and noneContIsClosed(GenTwoContId, ApuGenContId, ExtPowerContId)
+  private def flowRightToLeft =
+    contIsOpen(GenOneContId) and anyContIsClosed(GenTwoContId, ApuGenContId, ExtPowerContId)
+
+  override def contactorIsClosed = flowLeftToRight or flowRightToLeft
+}
+
+class AcBusTwoTieContactor()(implicit ctx: SimulationContext)
+    extends Contactor(ctx, AcBusTwoTieContId) {
+
+  private def flowLeftToRight =
+    contIsOpen(GenTwoContId) and anyContIsClosed(GenOneContId, ApuGenContId, ExtPowerContId)
+  private def flowRightToLeft =
+    contIsClosed(GenTwoContId) and noneContIsClosed(GenOneContId, ApuGenContId, ExtPowerContId)
+
+  override def contactorIsClosed = flowLeftToRight or flowRightToLeft
 }
 
 class AcEssFeedNormContactor()(implicit ctx: SimulationContext)

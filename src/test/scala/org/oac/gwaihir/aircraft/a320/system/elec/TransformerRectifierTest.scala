@@ -22,14 +22,14 @@ class TransformerRectifierTest extends FlatSpec with Matchers {
 
   "TR1" must "be powered when AC BUS 1 is energized" in new ColdAndDarkSystem {
     sys.ac.trOne.state should be (TransformerRectifier.Unpowered)
-    sys.ac.busOne.power()
+    sys.ac.busOne.power(ElectricalSystem.GenOneContId)
     exec.loop()
     sys.ac.trOne.state should be (TransformerRectifier.Powered)
   }
 
   "TR2" must "be powered when AC BUS 2 is energized" in new ColdAndDarkSystem {
     sys.ac.trTwo.state should be (TransformerRectifier.Unpowered)
-    sys.ac.busTwo.power()
+    sys.ac.busTwo.power(ElectricalSystem.GenTwoContId)
     exec.loop()
     sys.ac.trTwo.state should be (TransformerRectifier.Powered)
   }
