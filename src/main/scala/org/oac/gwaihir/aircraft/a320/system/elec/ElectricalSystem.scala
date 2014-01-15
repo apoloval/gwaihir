@@ -28,8 +28,6 @@ trait ElectricalSystemConditions
 
 class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
 
-  import ElectricalSystem._
-
   override val id = Id
 
   val ac = new DeviceSystem {
@@ -81,39 +79,4 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     dc.init()
     panel.init()
   }
-}
-
-object ElectricalSystem {
-
-  val Id = DeviceId("/System/Elec")
-  val AcSubsystemId = Id / "Ac"
-  val DcSubsystemId = Id / "Dc"
-  val PanelSubsystemId = Id / "Panel"
-
-  val AcBusOneId = AcSubsystemId / "Bus1"
-  val AcBusOneTieContId = AcSubsystemId / "Bus1TieCont"
-  val AcBusTwoId = AcSubsystemId / "Bus2"
-  val AcBusTwoTieContId = AcSubsystemId / "Bus2TieCont"
-  val AcEssFeedSwitchId = AcSubsystemId / "EssFeedSwitch"
-  val AcEssFeedNormContactorId = AcSubsystemId / "EssFeedNormCont"
-  val AcEssFeedAltContactorId = AcSubsystemId / "EssFeedAltCont"
-  val ApuGenId = AcSubsystemId / "ApuGen"
-  val ApuGenContId = AcSubsystemId / "ApuGenCont"
-  val GenOneId = AcSubsystemId / "Gen1"
-  val GenOneContId = AcSubsystemId / "Gen1Cont"
-  val GenTwoId = AcSubsystemId / "Gen2"
-  val GenTwoContId = AcSubsystemId / "Gen2Cont"
-  val ExtPowerId = AcSubsystemId / "ExtPower"
-  val ExtPowerContId = AcSubsystemId / "ExtPowerCont"
-  val TrOneId = AcSubsystemId / "Tr1"
-  val TrOneContactorId = AcSubsystemId / "Tr1Cont"
-  val TrTwoId = AcSubsystemId / "Tr2"
-  val TrTwoContactorId = AcSubsystemId / "Tr2Cont"
-
-  val BatteryOneId = DcSubsystemId / "Battery1"
-  val BatteryTwoId = DcSubsystemId / "Battery2"
-  val DcBusOneId = DcSubsystemId / "Bus1"
-  val DcBusTwoId = DcSubsystemId / "Bus2"
-  val DcTieOneContId = DcSubsystemId / "Tie1Cont"
-  val DcTieTwoContId = DcSubsystemId / "Tie2Cont"
 }

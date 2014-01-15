@@ -18,8 +18,6 @@ package org.oac.gwaihir.aircraft.a320.system.elec
 
 import org.oac.gwaihir.core._
 
-import ElectricalSystem._
-
 /** A trait providing matching conditions for events sent by buses. */
 trait BusConditions {
   self: ConditionEvaluator =>

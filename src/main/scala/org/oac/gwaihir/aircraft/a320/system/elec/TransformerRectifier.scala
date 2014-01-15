@@ -18,8 +18,6 @@ package org.oac.gwaihir.aircraft.a320.system.elec
 
 import org.oac.gwaihir.core._
 
-import ElectricalSystem._
-
 trait TransformerRectifierConditions {
 
   self: ConditionEvaluator =>

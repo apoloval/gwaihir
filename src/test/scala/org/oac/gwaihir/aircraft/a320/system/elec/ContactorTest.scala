@@ -171,13 +171,13 @@ class ContactorTest extends FlatSpec with Matchers {
 
   "AC ESS feed tie normal contactor" must "close when AC BUS 1 is energized and switch is NORM" in new ColdAndDarkSystem {
     sys.ac.acEssFeedNormContactor.state should be (Contactor.Open)
-    sys.ac.busOne.power(ElectricalSystem.GenOneContId)
+    sys.ac.busOne.power(GenOneContId)
     exec.loop()
     sys.ac.acEssFeedNormContactor.state should be (Contactor.Closed)
   }
 
   it must "remain open when AC BUS 1 is energized but switch is ALT" in new ColdAndDarkSystem {
-    sys.ac.busOne.power(ElectricalSystem.GenOneContId)
+    sys.ac.busOne.power(GenOneContId)
     sys.panel.acEssFeedSwitch.switchOn()
     exec.loop()
     sys.ac.acEssFeedNormContactor.state should be (Contactor.Open)
@@ -196,13 +196,13 @@ class ContactorTest extends FlatSpec with Matchers {
   }
 
   "DC Bus tie 1 contactor" must "close when DC BUS 1 is energized" in new ColdAndDarkSystem {
-    sys.dc.busOne.power(ElectricalSystem.TrOneContactorId)
+    sys.dc.busOne.power(TrOneContactorId)
     exec.loop()
     sys.dc.tieOneContactor.state should be (Contactor.Closed)
   }
 
   it must "close when DC BUS 2 is energized regardless DC BUS 1 state" in new ColdAndDarkSystem {
-    sys.dc.busTwo.power(ElectricalSystem.TrOneContactorId)
+    sys.dc.busTwo.power(TrOneContactorId)
     exec.loop()
     sys.dc.tieOneContactor.state should be (Contactor.Closed)
   }
