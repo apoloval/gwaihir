@@ -103,7 +103,7 @@ class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
 object Bus {
 
   sealed trait State
-  case class Energized(by: DeviceId) extends State
+  case class Energized(by: DeviceId*) extends State
   case object Unenergized extends State
   val InitialState = Unenergized
 
