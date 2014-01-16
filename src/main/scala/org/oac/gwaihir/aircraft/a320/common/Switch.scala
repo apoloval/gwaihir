@@ -22,16 +22,16 @@ trait SwitchConditions {
   self: ConditionEvaluator =>
 
   /** A condition consisting of the given switch to be in the given state. */
-  def switchIs(swId: DeviceId, state: Switch.State) = eventMatch(swId, {
-    case StateChangedEvent(_, `state`) => true
-    case _ => false
+  def switchIs(swId: DeviceId, state: Switch.State): BooleanCondition  = eventMatch(swId, {
+    case StateChangedEvent(_, `state`) => Some(true)
+    case _ => Some(false)
   })
 
   /** A condition consisting of the given switch to be on. */
-  def switchIsOn(swId: DeviceId) = switchIs(swId, Switch.SwitchedOn)
+  def switchIsOn(swId: DeviceId): BooleanCondition  = switchIs(swId, Switch.SwitchedOn)
 
   /** A condition consisting of the given switch to be off. */
-  def switchIsOff(swId: DeviceId) = switchIs(swId, Switch.SwitchedOff)
+  def switchIsOff(swId: DeviceId): BooleanCondition  = switchIs(swId, Switch.SwitchedOff)
 }
 
 class Switch(val id: DeviceId)(implicit val ctx: SimulationContext)

@@ -21,44 +21,92 @@ import org.scalatest.{Matchers, FlatSpec}
 class BusTest extends FlatSpec with Matchers {
 
   "AC BUS 1" must "be energized when GEN 1 contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busOne.state should be (Bus.Unenergized)
-    sys.ac.genOneContactor.close()
+    sys.ac.busOne.state should be (Bus.DeEnergized)
+    sys.ac.genOneContactor.close(GenOneId)
     exec.loop()
-    sys.ac.busOne.state should be (Bus.Energized(GenOneContId))
+    sys.ac.busOne.state should be (Bus.Energized(GenOneId))
+  }
+
+  it must "be de-energized when GEN 1 contactor was closed and then opens" in new ColdAndDarkSystem {
+    sys.ac.genOneContactor.close(GenOneId)
+    exec.loop()
+    sys.ac.genOneContactor.open()
+    exec.loop()
+    sys.ac.busOne.state should be (Bus.DeEnergized)
   }
 
   it must "be energized when BUS 1 TIE contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busOne.state should be (Bus.Unenergized)
-    sys.ac.busOneTieContactor.close()
+    sys.ac.busOne.state should be (Bus.DeEnergized)
+    sys.ac.busOneTieContactor.close(ApuGenId)
     exec.loop()
-    sys.ac.busOne.state should be (Bus.Energized(AcBusOneTieContId))
+    sys.ac.busOne.state should be (Bus.Energized(ApuGenId))
+  }
+
+  it must "be de-energized when BUS 1 TIE contactor was closed and then opens" in new ColdAndDarkSystem {
+    sys.ac.busOneTieContactor.close(ApuGenId)
+    exec.loop()
+    sys.ac.busOneTieContactor.open()
+    exec.loop()
+    sys.ac.busOne.state should be (Bus.DeEnergized)
   }
 
   "AC BUS 2" must "be energized when GEN 2 contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busTwo.state should be (Bus.Unenergized)
-    sys.ac.genTwoContactor.close()
+    sys.ac.busTwo.state should be (Bus.DeEnergized)
+    sys.ac.genTwoContactor.close(GenTwoId)
     exec.loop()
-    sys.ac.busTwo.state should be (Bus.Energized(GenTwoContId))
+    sys.ac.busTwo.state should be (Bus.Energized(GenTwoId))
+  }
+
+  it must "be de-energized when GEN 2 contactor was closed and then opens" in new ColdAndDarkSystem {
+    sys.ac.genTwoContactor.close(GenTwoId)
+    exec.loop()
+    sys.ac.genTwoContactor.open()
+    exec.loop()
+    sys.ac.busTwo.state should be (Bus.DeEnergized)
   }
 
   it must "be energized when BUS 2 TIE contactor is closed" in new ColdAndDarkSystem {
-    sys.ac.busTwo.state should be (Bus.Unenergized)
-    sys.ac.busTwoTieContactor.close()
+    sys.ac.busTwo.state should be (Bus.DeEnergized)
+    sys.ac.busTwoTieContactor.close(ExtPowerId)
     exec.loop()
-    sys.ac.busTwo.state should be (Bus.Energized(AcBusTwoTieContId))
+    sys.ac.busTwo.state should be (Bus.Energized(ExtPowerId))
+  }
+
+  it must "be de-energized when BUS 2 TIE contactor was closed and then opens" in new ColdAndDarkSystem {
+    sys.ac.busTwoTieContactor.close(ApuGenId)
+    exec.loop()
+    sys.ac.busTwoTieContactor.open()
+    exec.loop()
+    sys.ac.busTwo.state should be (Bus.DeEnergized)
   }
 
   "DC BUS 1" must "be energized when TR1 contactor is closed" in new ColdAndDarkSystem {
-    sys.dc.busOne.state should be (Bus.Unenergized)
-    sys.dc.trOneContactor.close()
+    sys.dc.busOne.state should be (Bus.DeEnergized)
+    sys.dc.trOneContactor.close(TrOneId)
     exec.loop()
-    sys.dc.busOne.state should be (Bus.Energized(TrOneContactorId))
+    sys.dc.busOne.state should be (Bus.Energized(TrOneId))
+  }
+
+  it must "be de-energized when TR1 contactor was closed and then opens" in new ColdAndDarkSystem {
+    sys.dc.trOneContactor.close(TrOneId)
+    exec.loop()
+    sys.dc.trOneContactor.open()
+    exec.loop()
+    sys.dc.busOne.state should be (Bus.DeEnergized)
   }
 
   "DC BUS 2" must "be energized when TR2 contactor is closed" in new ColdAndDarkSystem {
-    sys.dc.busTwo.state should be (Bus.Unenergized)
-    sys.dc.trTwoContactor.close()
+    sys.dc.busTwo.state should be (Bus.DeEnergized)
+    sys.dc.trTwoContactor.close(TrTwoId)
     exec.loop()
-    sys.dc.busTwo.state should be (Bus.Energized(TrTwoContactorId))
+    sys.dc.busTwo.state should be (Bus.Energized(TrTwoId))
+  }
+
+  it must "be de-energized when TR2 contactor was closed and then opens" in new ColdAndDarkSystem {
+    sys.dc.trTwoContactor.close(TrOneId)
+    exec.loop()
+    sys.dc.trTwoContactor.open()
+    exec.loop()
+    sys.dc.busTwo.state should be (Bus.DeEnergized)
   }
 }

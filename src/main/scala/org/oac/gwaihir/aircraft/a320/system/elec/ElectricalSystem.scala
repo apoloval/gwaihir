@@ -62,7 +62,9 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     val busTwo = newDevice(new DcBusTwo())
     val tieOneContactor = newDevice(new DcTieOneContactor())
     val tieTwoContactor = newDevice(new DcTieTwoContactor())
+    val trOne = newDevice(new TrOne())
     val trOneContactor = newDevice(new TrOneContactor())
+    val trTwo = newDevice(new TrTwo())
     val trTwoContactor = newDevice(new TrTwoContactor())
   }
 

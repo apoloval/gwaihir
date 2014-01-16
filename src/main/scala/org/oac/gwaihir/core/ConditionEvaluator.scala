@@ -16,85 +16,111 @@
 
 package org.oac.gwaihir.core
 
+/** An object that is conditioned by events occurred on some devices. */
+trait EventConditioned {
+
+  /** Retrieve the set of devices which events are conditioning this object. */
+  def conditionedBy: Set[DeviceId]
+}
+
 /** A condition that may be evaluated by a condition watcher.
   *
   * Objects of these class are used to evaluate conditions that may derive in an action to
-  * be triggered when the condition is met. Conditions are watched by ConditionWatcher objects.
-  * If the condition changes, the watchers are requested to watch it by evaluating and executing
-  * the corresponding action if the condition matches.
+  * be triggered when the condition is met.
+  *
+  * Conditions are aimed to be watched by ConditionWatcher objects, which will retrieve the
+  * devices whose events are affecting the condition and will subscribe to them. When any of
+  * these devices send a event, the watcher is notified and it will evaluate the condition.
+  * If the result of the evaluation is Some(), its contents are passed to the action associated
+  * with the watcher. If the result is None, the condition is considered as not-met, and nothing
+  * is done. 
   */
-abstract class Condition {
+trait Condition[T] extends EventConditioned {
 
-  type Context = Map[DeviceId, Any]
-
-  def conditionedBy: Seq[DeviceId]
+  /** The context that is passed to the conditions for its evaluation.
+    *
+    * It's made by a map of DeviceId to any object. Each entry represents the last event that
+    * was sent for the given device.
+    */
+  type EvalContext = Map[DeviceId, Any]
 
   /** Evaluate the condition.
     *
-    * This function is invoked by the watcher to determine whether the condition is met
-    * (Some(true)) or not (Some(false)). It may return None if the condition cannot be determined
-    * by some reason (i.e. no enough information is still available).
+    * This function is invoked by the watcher to determine whether the condition is met. A
+    * result of Some(e) indicates that the condition is met, being e the result of the
+    * evaluation. If the condition is not met, None is returned.
     */
-  def eval(ctx: Context): Option[Boolean]
+  def eval(ctx: EvalContext): Option[T]
+
+  /** Convenience function to create a WhenCondition. */
+  def when(c: Condition[Boolean]): Condition[T] = WhenCondition(this, c)
+}
+
+/** A trait that provides some convenience functions to perform boolean logic. */
+trait BooleanLogic {
+
+  self: Condition[Boolean] =>
 
   /** Create a new logic-and condition from this one and the one passed as argument.  */
-  def and(c: Condition) = new AndCondition(this, c)
+  def and(c: Condition[Boolean]) = new AndCondition(this, c)
 
   /** Create a new logic-or condition from this one and the one passed as argument.  */
-  def or(c: Condition) = new OrCondition(this, c)
+  def or(c: Condition[Boolean]) = new OrCondition(this, c)
 
   /** Create a new logic-xor condition from this one and the one passed as argument.  */
-  def xor(c: Condition) = new XorCondition(this, c)
+  def xor(c: Condition[Boolean]) = new XorCondition(this, c)
 }
 
-/** A condition that depends not in any other condition. */
-abstract class NullaryCondition extends Condition {
+/** A event-conditioned object that depends not in any event from any device. */
+trait NoEventConditioned extends EventConditioned {
 
-  override def conditionedBy = Seq.empty
+  override def conditionedBy = Set.empty
 }
 
-/** A condition that depends on another condition. */
-abstract class UnaryCondition extends Condition {
+/** A event-conditioned object that depends on events of a single event. */
+trait UnaryEventConditioned extends EventConditioned {
 
-  def c: Condition
+  def c: EventConditioned
 
   override def conditionedBy = c.conditionedBy
 }
 
-/** A condition that depends in other two conditions. */
-abstract class BinaryCondition extends Condition {
+/** A event-conditioned object that depends on events of two devices. */
+trait BinaryEventConditioned extends EventConditioned {
 
-  def c1: Condition
-  def c2: Condition
+  def c1: EventConditioned
+  def c2: EventConditioned
 
   override def conditionedBy = c1.conditionedBy ++ c2.conditionedBy
 }
 
 /** A condition that always evaluates to true. */
-final object TrueCondition extends NullaryCondition {
+object TrueCondition extends Condition[Boolean] with BooleanLogic with NoEventConditioned {
 
-  def eval(ctx: Context) = Some(true)
+  def eval(ctx: EvalContext) = Some(true)
 }
 
-/** A condition that always evaluates to false. */
-final object FalseCondition extends NullaryCondition {
+/** A boolean condition that always evaluates to false. */
+object FalseCondition extends Condition[Boolean] with BooleanLogic with NoEventConditioned {
 
-  def eval(ctx: Context) = Some(false)
+  def eval(ctx: EvalContext) = Some(false)
 }
 
-/** A condition that evaluates to the negation of the result of another condition. */
-final case class NotCondition(c: Condition) extends UnaryCondition {
+/** A boolean condition that evaluates to the negation of another boolean condition. */
+final case class NotCondition(c: Condition[Boolean])
+    extends Condition[Boolean] with BooleanLogic with UnaryEventConditioned {
 
-  override def eval(ctx: Context): Option[Boolean] = c.eval(ctx) match {
+  override def eval(ctx: EvalContext): Option[Boolean] = c.eval(ctx) match {
     case None => None
     case Some(x) => Some(!x)
   }
 }
 
-/** A condition that evaluates to the logic-and of the result of two other conditions. */
-final case class AndCondition(c1: Condition, c2: Condition) extends BinaryCondition {
+/** A boolean condition that evaluates to the logic-and of other two boolean conditions. */
+final case class AndCondition(c1: Condition[Boolean], c2: Condition[Boolean])
+    extends Condition[Boolean] with BooleanLogic with BinaryEventConditioned {
 
-  override def eval(ctx: Context): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
+  override def eval(ctx: EvalContext): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
     case (None, _) => None
     case (_, None) => None
     case (Some(_), Some(false)) => Some(false)
@@ -103,10 +129,11 @@ final case class AndCondition(c1: Condition, c2: Condition) extends BinaryCondit
   }
 }
 
-/** A condition that evaluates to the logic-or of the result of two other conditions. */
-case class OrCondition(c1: Condition, c2: Condition) extends BinaryCondition {
+/** A boolean condition that evaluates to the logic-or of other two boolean conditions. */
+case class OrCondition(c1: Condition[Boolean], c2: Condition[Boolean])
+    extends Condition[Boolean] with BooleanLogic with BinaryEventConditioned {
 
-  override def eval(ctx: Context): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
+  override def eval(ctx: EvalContext): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
     case (None, _) => None
     case (_, None) => None
     case (Some(_), Some(true)) => Some(true)
@@ -115,10 +142,11 @@ case class OrCondition(c1: Condition, c2: Condition) extends BinaryCondition {
   }
 }
 
-/** A condition that evaluates to the logic-xor of the result of two other conditions. */
-case class XorCondition(c1: Condition, c2: Condition) extends BinaryCondition {
+/** A boolean condition that evaluates to the logic-xor of other two boolean conditions. */
+case class XorCondition(c1: Condition[Boolean], c2: Condition[Boolean])
+    extends Condition[Boolean] with BooleanLogic with BinaryEventConditioned {
 
-  override def eval(ctx: Context): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
+  override def eval(ctx: EvalContext): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
     case (None, _) => None
     case (_, None) => None
     case (Some(false), Some(true)) => Some(true)
@@ -127,32 +155,46 @@ case class XorCondition(c1: Condition, c2: Condition) extends BinaryCondition {
   }
 }
 
-/** A condition that evaluates based on the last value of a event.
-  *
-  * This condition object listens on a channel for events on a determined device. It uses a
-  * predicate to determine whether the event met or not the condition. When the event evaluation
-  * changes respect the last evaluated value, the watcher is requested to watch the condition.
+/** A condition that evaluates another condition when a boolean condition is met. */
+case class WhenCondition[T](c1: Condition[T], c2: Condition[Boolean])
+    extends Condition[T] with BinaryEventConditioned {
+
+  def eval(ctx: EvalContext): Option[T] = c2.eval(ctx) match {
+    case Some(true) => c1.eval(ctx)
+    case _ => None
+  }
+}
+
+/** A condition that evaluates based on the last-known value of an event.
   *
   * @param dev The device which events are to be matched
   * @param pred The predicate that determines whether the condition is met
   */
-case class EventMatchCondition(dev: DeviceId)
-                              (pred: PartialFunction[Any, Boolean]) extends Condition {
+case class EventMatchCondition[T](dev: DeviceId)(pred: PartialFunction[Any, Option[T]])
+    extends Condition[T] with EventConditioned {
 
-  override def conditionedBy = Seq(dev)
+  override def conditionedBy = Set(dev)
 
-  override def eval(ctx: Context) = ctx.get(dev) match {
-    case Some(event) => Some(pred(event))
+  override def eval(ctx: EvalContext) = ctx.get(dev) match {
+    case Some(event) => pred(event)
     case None => None
   }
 }
 
 /** An object that watchs conditions expecting them to be met.
   *
+  * A condition watcher wraps a condition object with the purpose be aware when that condition
+  * is met. Upon creation, it retrieves the set of devices whose events the condition depends on.
+  * Then it subscribes to the event channel for any event on these devices. When one of these
+  * events is received, the condition is evaluated. If the result of the evaluation is Some(),
+  * then the condition is considered to met and the action associated to the watcher is
+  * executed.
+  *
+  * @param eventChannel The event channel to watch for condition inputs.
   * @param cond The condition to watch
   * @param whenMet The action to be executed when condition is met
   */
-class ConditionWatcher(eventChannel: EventChannel, cond: Condition, whenMet: => Unit) {
+class ConditionWatcher[T](eventChannel: EventChannel, cond: Condition[T], whenMet: T => Unit) {
 
   var ctx: Map[DeviceId, Any] = Map.empty
 
@@ -163,8 +205,10 @@ class ConditionWatcher(eventChannel: EventChannel, cond: Condition, whenMet: => 
   private def onNewEvent: EventChannel.Subscription = {
     case (sender, event) =>
       ctx += sender -> event
-      if (cond.eval(ctx).getOrElse(false)) { whenMet }
-      ()
+      cond.eval(ctx) match {
+        case Some(v) => whenMet(v)
+        case _ => ()
+      }
     case _ => ()
   }
 }
@@ -174,24 +218,29 @@ trait ConditionEvaluator {
 
   self: EventChannelProvider =>
 
-  private var watchers: Set[ConditionWatcher] = Set.empty
+  def not(cond: Condition[Boolean]): Condition[Boolean] = new NotCondition(cond)
 
-  def not(cond: Condition): Condition = new NotCondition(cond)
+  def watch[T](cond: Condition[T])(whenMet: T => Unit) =
+    new ConditionWatcher(eventChannel, cond, whenMet)
 
-  def watch(cond: Condition)(whenMet: => Unit) =
-    watchers += new ConditionWatcher(eventChannel, cond, whenMet)
+  def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Option[Boolean]]): BooleanCondition =
+    new EventMatchCondition[Boolean](dev)(pred) with BooleanLogic {}
 
-  def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Boolean]): Condition =
-    new EventMatchCondition(dev)(pred)
+  def deviceStateChanged[State : Manifest, T](dev: DeviceId)(eval: State => Option[T]): Condition[T] =
+    EventMatchCondition[T](dev) {
+      case StateChangedEvent(_, state: State) => for { result <- eval(state) } yield result
+      case _ => None
+    }
 
-  def deviceIs[State](dev: DeviceId, state: State): Condition = eventMatch(dev, {
-    case StateChangedEvent(_, `state`) => true
-    case _ => false
+  def deviceIs[State](dev: DeviceId, state: State): BooleanCondition = eventMatch(dev, {
+    case StateChangedEvent(_, `state`) => Some(true)
+    case _ => Some(false)
   })
 
-  def deviceIs[State : Manifest](dev: DeviceId)(pred: PartialFunction[State, Boolean]): Condition =
+  def deviceIs[State : Manifest](dev: DeviceId)
+                                (pred: PartialFunction[State, Boolean]): BooleanCondition =
     eventMatch(dev, {
-      case StateChangedEvent(_, s: State) => pred(s)
-      case _ => false
+      case StateChangedEvent(_, s: State) => Some(pred(s))
+      case _ => Some(false)
     })
 }

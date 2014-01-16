@@ -23,13 +23,13 @@ trait GeneratorConditions {
   self: ConditionEvaluator =>
 
   /** A condition consisting of the given generator to be on given state. */
-  def genIs(genId: DeviceId, state: Generator.State) = deviceIs(genId, state)
+  def genIs(genId: DeviceId, state: Generator.State): BooleanCondition  = deviceIs(genId, state)
 
   /** A condition consisting of the given generator to be on. */
-  def genIsOn(genId: DeviceId) = genIs(genId, Generator.PowerOn)
+  def genIsOn(genId: DeviceId): BooleanCondition = genIs(genId, Generator.PowerOn)
 
   /** A condition consisting of the given generator to be off. */
-  def genIsOff(genId: DeviceId) = genIs(genId, Generator.PowerOff)
+  def genIsOff(genId: DeviceId): BooleanCondition  = genIs(genId, Generator.PowerOff)
 }
 
 class Generator(val ctx: SimulationContext, val id: DeviceId)

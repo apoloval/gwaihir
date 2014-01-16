@@ -14,23 +14,9 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oac.gwaihir.aircraft.a320.system.elec
+package org.oac.gwaihir
 
-import org.scalatest.{Matchers, FlatSpec}
+package object core {
 
-class TransformerRectifierTest extends FlatSpec with Matchers {
-
-  "TR1" must "be powered when AC BUS 1 is energized" in new ColdAndDarkSystem {
-    sys.ac.trOne.state should be (TransformerRectifier.Unpowered)
-    sys.ac.busOne.power(GenOneId)
-    exec.loop()
-    sys.ac.trOne.state should be (TransformerRectifier.Powered(GenOneId))
-  }
-
-  "TR2" must "be powered when AC BUS 2 is energized" in new ColdAndDarkSystem {
-    sys.ac.trTwo.state should be (TransformerRectifier.Unpowered)
-    sys.ac.busTwo.power(ApuGenId)
-    exec.loop()
-    sys.ac.trTwo.state should be (TransformerRectifier.Powered(ApuGenId))
-  }
+  type BooleanCondition = Condition[Boolean] with BooleanLogic
 }

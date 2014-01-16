@@ -23,13 +23,25 @@ trait TransformerRectifierConditions {
   self: ConditionEvaluator =>
 
   /** A condition consisting of the given TR to be in the given state. */
-  def trIs(trId: DeviceId, state: TransformerRectifier.State) = deviceIs(trId, state)
+  def trIs(trId: DeviceId, state: TransformerRectifier.State): BooleanCondition =
+    deviceIs(trId, state)
 
   /** A condition consisting of the given TR to be powered. */
-  def trIsPowered(trId: DeviceId) = deviceIs(trId, TransformerRectifier.Powered)
+  def trIsPowered(trId: DeviceId): BooleanCondition = deviceIs[TransformerRectifier.State](trId) {
+    case TransformerRectifier.Powered(_) => true
+    case _ => false
+  }
+
+  /** A condition consisting of the given TR to be powered by a supply. */
+  def trIsPoweredBy(trId: DeviceId): Condition[DeviceId] =
+    deviceStateChanged[TransformerRectifier.State, DeviceId](trId) {
+      case TransformerRectifier.Powered(supply) => Some(supply)
+      case _ => None
+    }
 
   /** A condition consisting of the given TR to be unpowered. */
-  def trIsUnpowered(trId: DeviceId) = deviceIs(trId, TransformerRectifier.Unpowered)
+  def trIsUnpowered(trId: DeviceId): BooleanCondition =
+    deviceIs(trId, TransformerRectifier.Unpowered)
 }
 
 abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId) extends Device
@@ -40,26 +52,25 @@ abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId
 
   override def initialState = Unpowered
 
-  def trIsPowered: Condition
-
-  def power() = setState(Powered)
+  def power(supply: DeviceId) = setState(Powered(supply))
   def unpower() = setState(Unpowered)
-
-  watch(trIsPowered) { power() }
-  watch(not(trIsPowered)) { unpower() }
 }
 
 class TrOne(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrOneId) {
-  override def trIsPowered = busIsEnergized(AcBusOneId)
+
+  watch(busIsEnergizedBy(AcBusOneId)) { supply => power(supply)}
+  watch(busIsUnenergized(AcBusOneId)) { if (_) unpower() }
 }
 
 class TrTwo(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrTwoId) {
-  override def trIsPowered = busIsEnergized(AcBusTwoId)
+
+  watch(busIsEnergizedBy(AcBusTwoId)) { supply => power(supply)}
+  watch(busIsUnenergized(AcBusTwoId)) { if (_) unpower() }
 }
 
 object TransformerRectifier {
   sealed trait State
-  case object Powered extends State
+  case class Powered(by: DeviceId) extends State
   case object Unpowered extends State
   val InitialState = Unpowered
 

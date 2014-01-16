@@ -23,20 +23,23 @@ trait BusConditions {
   self: ConditionEvaluator =>
 
   /** A condition consistent of the given bus to be in the given state. */
-  def busIs(busId: DeviceId, state: Bus.State) = deviceIs(busId, state)
+  def busIs(busId: DeviceId, state: Bus.State): BooleanCondition  = deviceIs(busId, state)
 
   /** A condition consisting of the given bus to be energized. */
-  def busIsEnergized(busId: DeviceId) = deviceIs[Bus.State](busId) {
+  def busIsEnergized(busId: DeviceId): BooleanCondition  = deviceIs[Bus.State](busId) {
     case Bus.Energized(_) => true
     case _ => false
   }
 
   /** A condition consisting of the given bus to be energized by given supplier. */
-  def busIsEnergizedBy(busId: DeviceId, supplierId: DeviceId) =
-    busIs(busId, Bus.Energized(supplierId))
+  def busIsEnergizedBy(busId: DeviceId): Condition[DeviceId] =
+    deviceStateChanged[Bus.State, DeviceId](busId) {
+      case Bus.Energized(dev) => Some(dev)
+      case _ => None
+    }
 
   /** A condition consisting of the given bus to be unenergized. */
-  def busIsUnenergized(busId: DeviceId) = busIs(busId, Bus.Unenergized)
+  def busIsUnenergized(busId: DeviceId): BooleanCondition  = busIs(busId, Bus.DeEnergized)
 }
 
 abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
@@ -45,67 +48,62 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 
   import Bus._
 
-  override def initialState = Bus.Unenergized
+  override def initialState = Bus.DeEnergized
 
   override def init() = ctx.eventChannel.send(id, WasInitialized)
 
   def power(by: DeviceId) = setState(Energized(by))
-  def unpower() = setState(Unenergized)
+  def unpower() = setState(DeEnergized)
 
-  protected def watchPoweredByContactor(contId: DeviceId) = watch(contIsClosed(contId)) {
-    power(contId)
-  }
+  protected def watchPoweredByContactor(contId: DeviceId) =
+    watch(contIsClosedBy(contId)) { supplier => power(supplier) }
 
   protected def watchUnpoweredByContactors(contIds: DeviceId*) = {
-    val allContsAreOpen = contIds.foldLeft[Condition](TrueCondition) {
+    val allContsAreOpen = contIds.foldLeft[BooleanCondition](TrueCondition) {
       (c, cont) => c and contIsOpen(cont)
     }
-    watch(allContsAreOpen) { unpower() }
-  }
-
-  /** Watch that the bus is powered by any of the given contactors.
-    *
-    * If any of these contactors is closed, the bus determines it is powered by that contactor.
-    * If all of them are open, the bus determines it is unpowered.
-    */
-  protected def watchPoweredByContactors(contIds: DeviceId*) = {
-    contIds.foreach(cont => watchPoweredByContactor(cont))
-    watchUnpoweredByContactors(contIds: _*)
+    watch(allContsAreOpen) { areOpen => if (areOpen) { unpower() } }
   }
 }
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
 
   watchPoweredByContactor(GenOneContId)
-  watch(contIsClosed(AcBusOneTieContId) and contIsOpen(GenOneContId)) { power(AcBusOneTieContId) }
+  watchPoweredByContactor(AcBusOneTieContId)
   watchUnpoweredByContactors(GenOneContId, AcBusOneTieContId)
 }
 
 class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
   watchPoweredByContactor(GenTwoContId)
-  watch(contIsClosed(AcBusTwoTieContId) and contIsOpen(GenTwoContId)) { power(AcBusTwoTieContId) }
+  watchPoweredByContactor(AcBusTwoTieContId)
   watchUnpoweredByContactors(GenTwoContId, AcBusTwoTieContId)
 }
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {
 
-  watchPoweredByContactors(TrOneContactorId)
+  watch(contIsClosed(TrOneContactorId)) {
+    case true => power(TrOneId)
+    case false => unpower()
+  }
 }
 
 class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
 
-  watchPoweredByContactors(TrTwoContactorId)
+  watch(contIsClosed(TrTwoContactorId)) {
+    case true => power(TrTwoId)
+    case false => unpower()
+  }
 }
 
 object Bus {
 
   sealed trait State
-  case class Energized(by: DeviceId*) extends State
-  case object Unenergized extends State
-  val InitialState = Unenergized
+  case class Energized(by: DeviceId) extends State
+  case object DeEnergized extends State
+  val InitialState = DeEnergized
 
   val WasInitialized = StateChangedEvent(None, InitialState)
-  val WasEnergized = StateChangedEvent(Some(Unenergized), Energized)
-  val WasUnenergized = StateChangedEvent(Some(Energized), Unenergized)
+  val WasEnergized = StateChangedEvent(Some(DeEnergized), Energized)
+  val WasUnenergized = StateChangedEvent(Some(Energized), DeEnergized)
 }

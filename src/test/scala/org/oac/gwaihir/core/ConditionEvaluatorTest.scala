@@ -26,16 +26,15 @@ case class DummyEvaluator(eventChannel: EventChannel)
 
   var matches: Option[Boolean] = None
 
-  val condition = eventMatch(dev1, { case (isOn: Boolean) => isOn }) and
-    eventMatch(dev2, { case (power: Int) => power > 100 })
+  val dev1IsOn = eventMatch(dev1, { case (isOn: Boolean) => Some(isOn) })
+  val dev2IsOver100 = eventMatch(dev2, { case (power: Int) => Some(power > 100) })
 
-  watch(condition) { matches = Some(true) }
-  watch(not(condition)) { matches = Some(false) }
+  watch(dev1IsOn and dev2IsOver100) { isMet => matches = Some(isMet) }
 }
 
 class ConditionEvaluatorTest extends FlatSpec with Matchers {
 
-  "Event evaluator" must "consider undetermined matching when no event is sent" in
+  "Condition evaluator" must "consider undetermined matching when no event is sent" in
     new EvaluatorInitialized {
       eval.matches should be (None)
     }

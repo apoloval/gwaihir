@@ -47,6 +47,7 @@ package object elec {
 
   val BatteryOneId = DcSubsystemId / "Battery1"
   val BatteryTwoId = DcSubsystemId / "Battery2"
+  val DcBatteryBusId = DcSubsystemId / "BatteryBus"
   val DcBusOneId = DcSubsystemId / "Bus1"
   val DcBusTwoId = DcSubsystemId / "Bus2"
   val DcTieOneContId = DcSubsystemId / "Tie1Cont"
