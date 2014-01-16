@@ -109,4 +109,31 @@ class BusTest extends FlatSpec with Matchers {
     exec.loop()
     sys.dc.busTwo.state should be (Bus.DeEnergized)
   }
+
+  "DC battery bus" must "be energized when DC TIE 1 contactor is closed" in new ColdAndDarkSystem {
+    sys.dc.tieOneContactor.close(TrOneId)
+    exec.loop()
+    sys.dc.batteryBus.state should be (Bus.Energized(TrOneId))
+  }
+
+  it must "be energized when DC TIE 2 cont is closed and DC TIE 1 cont is open" in new ColdAndDarkSystem {
+    sys.dc.tieTwoContactor.close(TrTwoId)
+    exec.loop()
+    sys.dc.batteryBus.state should be (Bus.Energized(TrTwoId))
+  }
+
+  it must "be energized by DC TIE 1 cont when both DC TIE conts are closed" in new ColdAndDarkSystem {
+    sys.dc.tieOneContactor.close(TrOneId)
+    sys.dc.tieTwoContactor.close(TrTwoId)
+    exec.loop()
+    sys.dc.batteryBus.state should be (Bus.Energized(TrOneId))
+  }
+
+  "Hot bus 1" must "be energized as soon as the battery one is initialized" in new ColdAndDarkSystem {
+    sys.dc.hotBusOne.state should be (Bus.Energized(BatteryOneId))
+  }
+
+  "Hot bus 2" must "be energized as soon as the battery two is initialized" in new ColdAndDarkSystem {
+    sys.dc.hotBusTwo.state should be (Bus.Energized(BatteryTwoId))
+  }
 }

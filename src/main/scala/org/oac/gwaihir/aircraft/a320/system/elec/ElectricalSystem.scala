@@ -58,8 +58,13 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
     override implicit val ctx = ElectricalSystem.this.ctx
     override val id = DcSubsystemId
 
+    val batteryBus = newDevice(new DcBatteryBus())
+    val batteryOne = newDevice(new BatteryOne())
+    val batteryTwo = newDevice(new BatteryTwo())
     val busOne = newDevice(new DcBusOne())
     val busTwo = newDevice(new DcBusTwo())
+    val hotBusOne = newDevice(new HotBusOne())
+    val hotBusTwo = newDevice(new HotBusTwo())
     val tieOneContactor = newDevice(new DcTieOneContactor())
     val tieTwoContactor = newDevice(new DcTieTwoContactor())
     val trOne = newDevice(new TrOne())

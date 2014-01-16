@@ -242,6 +242,11 @@ trait ConditionEvaluator {
   def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Option[Boolean]]): BooleanCondition =
     new EventMatchCondition[Boolean](dev)(pred) with BooleanLogic {}
 
+  def deviceIsInitialized(dev: DeviceId): BooleanCondition = eventMatch(dev, {
+    case StateChangedEvent(None, _) => Some(true)
+    case _ => None
+  })
+
   def deviceStateChanged[State : Manifest, T](dev: DeviceId)(eval: State => Option[T]): Condition[T] =
     EventMatchCondition[T](dev) {
       case StateChangedEvent(_, state: State) => for { result <- eval(state) } yield result

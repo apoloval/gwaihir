@@ -86,6 +86,34 @@ class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
   }
 }
 
+class DcBatteryBus()(implicit ctx: SimulationContext) extends Bus(ctx, DcBatteryBusId) {
+
+  watch(
+    contIsClosedBy(DcTieOneContId),
+    contIsClosedBy(DcTieTwoContId) when contIsOpen(DcTieOneContId),
+    contIsClosedBy(BatteryOneContId) when (
+      contIsOpen(DcTieOneContId) and contIsOpen(DcTieTwoContId)),
+    contIsClosedBy(BatteryTwoContId) when (
+      contIsOpen(DcTieOneContId) and contIsOpen(DcTieTwoContId))
+  )
+  { supplier => power(supplier) }
+  { unpower() }
+}
+
+class HotBus(ctx: SimulationContext, busId: DeviceId, batteryId: DeviceId)
+    extends Bus(ctx, busId) {
+
+  watch(deviceIsInitialized(batteryId))
+  {
+    case true => power(batteryId)
+    case false => unpower()
+  }
+}
+
+class HotBusOne()(implicit ctx: SimulationContext) extends HotBus(ctx, HotBusOneId, BatteryOneId)
+
+class HotBusTwo()(implicit ctx: SimulationContext) extends HotBus(ctx, HotBusTwoId, BatteryTwoId)
+
 object Bus {
 
   sealed trait State
