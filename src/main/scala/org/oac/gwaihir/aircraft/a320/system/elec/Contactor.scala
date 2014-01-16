@@ -194,6 +194,28 @@ class DcTieTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx
   watch(contIsOpen(TrOneContactorId) and contIsOpen(TrTwoContactorId)) { if (_) { open() } }
 }
 
+class DcEssTieContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcEssTieContId) {
+
+  // TODO: watch
+}
+
+class EssTrContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcEssTrContId) {
+
+  // TODO: watch
+}
+
+class StaticInvOneContactor()(implicit ctx: SimulationContext)
+    extends Contactor(ctx, StaticInvOneContId) {
+
+  // TODO: watch
+}
+
+class StaticInvTwoContactor()(implicit ctx: SimulationContext)
+    extends Contactor(ctx, StaticInvTwoContId) {
+
+  // TODO: watch
+}
+
 object Contactor {
 
   sealed trait State

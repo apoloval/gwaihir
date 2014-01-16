@@ -114,6 +114,17 @@ class HotBusOne()(implicit ctx: SimulationContext) extends HotBus(ctx, HotBusOne
 
 class HotBusTwo()(implicit ctx: SimulationContext) extends HotBus(ctx, HotBusTwoId, BatteryTwoId)
 
+class DcEssentialBus()(implicit ctx: SimulationContext) extends Bus(ctx, DcEssBusId) {
+
+  watch(
+    contIsClosedBy(DcEssTieContId),
+    contIsClosedBy(StaticInvTwoContId),
+    contIsClosedBy(DcEssTrContId)
+  )
+  { supplier => power(supplier) }
+  { unpower() }
+}
+
 object Bus {
 
   sealed trait State
