@@ -24,7 +24,7 @@ class BusTest extends FlatSpec with Matchers {
     sys.ac.busOne.state should be (Bus.DeEnergized)
     sys.ac.genOneContactor.close(GenOneId)
     exec.loop()
-    sys.ac.busOne.state should be (Bus.Energized(GenOneId))
+    sys.ac.busOne.state should be (Bus.Energized(GenOneContId, GenOneId))
   }
 
   it must "be de-energized when GEN 1 contactor was closed and then opens" in new ColdAndDarkSystem {
@@ -37,9 +37,9 @@ class BusTest extends FlatSpec with Matchers {
 
   it must "be energized when BUS 1 TIE contactor is closed" in new ColdAndDarkSystem {
     sys.ac.busOne.state should be (Bus.DeEnergized)
-    sys.ac.busOneTieContactor.close(ApuGenId)
+    sys.ac.busOneTieContactor.close(Seq(ApuGenContId, ApuGenId))
     exec.loop()
-    sys.ac.busOne.state should be (Bus.Energized(ApuGenId))
+    sys.ac.busOne.state should be (Bus.Energized(AcBusOneTieContId, ApuGenContId, ApuGenId))
   }
 
   it must "be de-energized when BUS 1 TIE contactor was closed and then opens" in new ColdAndDarkSystem {
@@ -54,7 +54,7 @@ class BusTest extends FlatSpec with Matchers {
     sys.ac.busTwo.state should be (Bus.DeEnergized)
     sys.ac.genTwoContactor.close(GenTwoId)
     exec.loop()
-    sys.ac.busTwo.state should be (Bus.Energized(GenTwoId))
+    sys.ac.busTwo.state should be (Bus.Energized(GenTwoContId, GenTwoId))
   }
 
   it must "be de-energized when GEN 2 contactor was closed and then opens" in new ColdAndDarkSystem {
@@ -67,9 +67,9 @@ class BusTest extends FlatSpec with Matchers {
 
   it must "be energized when BUS 2 TIE contactor is closed" in new ColdAndDarkSystem {
     sys.ac.busTwo.state should be (Bus.DeEnergized)
-    sys.ac.busTwoTieContactor.close(ExtPowerId)
+    sys.ac.busTwoTieContactor.close(Seq(ExtPowerContId, ExtPowerId))
     exec.loop()
-    sys.ac.busTwo.state should be (Bus.Energized(ExtPowerId))
+    sys.ac.busTwo.state should be (Bus.Energized(AcBusTwoTieContId, ExtPowerContId, ExtPowerId))
   }
 
   it must "be de-energized when BUS 2 TIE contactor was closed and then opens" in new ColdAndDarkSystem {
@@ -84,7 +84,7 @@ class BusTest extends FlatSpec with Matchers {
     sys.dc.busOne.state should be (Bus.DeEnergized)
     sys.dc.trOneContactor.close(TrOneId)
     exec.loop()
-    sys.dc.busOne.state should be (Bus.Energized(TrOneId))
+    sys.dc.busOne.state should be (Bus.Energized(TrOneContactorId, TrOneId))
   }
 
   it must "be de-energized when TR1 contactor was closed and then opens" in new ColdAndDarkSystem {
@@ -99,7 +99,7 @@ class BusTest extends FlatSpec with Matchers {
     sys.dc.busTwo.state should be (Bus.DeEnergized)
     sys.dc.trTwoContactor.close(TrTwoId)
     exec.loop()
-    sys.dc.busTwo.state should be (Bus.Energized(TrTwoId))
+    sys.dc.busTwo.state should be (Bus.Energized(TrTwoContactorId, TrTwoId))
   }
 
   it must "be de-energized when TR2 contactor was closed and then opens" in new ColdAndDarkSystem {
@@ -110,23 +110,16 @@ class BusTest extends FlatSpec with Matchers {
     sys.dc.busTwo.state should be (Bus.DeEnergized)
   }
 
-  "DC battery bus" must "be energized when DC TIE 1 contactor is closed" in new ColdAndDarkSystem {
-    sys.dc.tieOneContactor.close(TrOneId)
+  "DC battery bus" must "be energized when DC TIE 1 contactor is supplied from DC BUS 1" in new ColdAndDarkSystem {
+    sys.dc.trOne.power(Seq(AcBusOneId, GenOneContId, GenOneId))
     exec.loop()
-    sys.dc.batteryBus.state should be (Bus.Energized(TrOneId))
+    sys.dc.batteryBus.state should be (Bus.Energized(DcTieOneContId, DcBusOneId, TrOneContactorId, TrOneId))
   }
 
-  it must "be energized when DC TIE 2 cont is closed and DC TIE 1 cont is open" in new ColdAndDarkSystem {
-    sys.dc.tieTwoContactor.close(TrTwoId)
+  it must "be energized when DC TIE 2 cont is supplied from DC BUS 2" in new ColdAndDarkSystem {
+    sys.dc.trTwo.power(Seq(AcBusTwoId, GenTwoContId, GenTwoId))
     exec.loop()
-    sys.dc.batteryBus.state should be (Bus.Energized(TrTwoId))
-  }
-
-  it must "be energized by DC TIE 1 cont when both DC TIE conts are closed" in new ColdAndDarkSystem {
-    sys.dc.tieOneContactor.close(TrOneId)
-    sys.dc.tieTwoContactor.close(TrTwoId)
-    exec.loop()
-    sys.dc.batteryBus.state should be (Bus.Energized(TrOneId))
+    sys.dc.batteryBus.state should be (Bus.Energized(DcTieTwoContId, DcBusTwoId, TrTwoContactorId, TrTwoId))
   }
 
   "Hot bus 1" must "be energized as soon as the battery one is initialized" in new ColdAndDarkSystem {
@@ -139,20 +132,20 @@ class BusTest extends FlatSpec with Matchers {
 
   "DC ESS Bus" must "be energized when DC ESS tie contactor is closed" in new ColdAndDarkSystem {
     sys.dc.essBus.state should be (Bus.DeEnergized)
-    sys.dc.essTieCont.close(TrOneId)
+    sys.dc.essTieCont.close(Seq(DcBatteryBusId, TrOneContactorId, TrOneId))
     exec.loop()
-    sys.dc.essBus.state should be (Bus.Energized(TrOneId))
+    sys.dc.essBus.state should be (Bus.Energized(DcEssTieContId, DcBatteryBusId, TrOneContactorId, TrOneId))
   }
 
   it must "be energized when STAT INV 1 tie contactor is closed" in new ColdAndDarkSystem {
     sys.dc.staticInvTwoCont.close(BatteryTwoId)
     exec.loop()
-    sys.dc.essBus.state should be (Bus.Energized(BatteryTwoId))
+    sys.dc.essBus.state should be (Bus.Energized(StaticInvTwoContId, BatteryTwoId))
   }
 
   it must "be energized when ESS TR tie contactor is closed" in new ColdAndDarkSystem {
     sys.dc.essTrCont.close(GenOneId)
     exec.loop()
-    sys.dc.essBus.state should be (Bus.Energized(GenOneId))
+    sys.dc.essBus.state should be (Bus.Energized(DcEssTrContId, GenOneId))
   }
 }

@@ -33,9 +33,9 @@ trait TransformerRectifierConditions {
   }
 
   /** A condition consisting of the given TR to be powered by a supply. */
-  def trIsPoweredBy(trId: DeviceId): Condition[DeviceId] =
-    deviceStateChanged[TransformerRectifier.State, DeviceId](trId) {
-      case TransformerRectifier.Powered(supply) => Some(supply)
+  def trIsPoweredBy(trId: DeviceId): Condition[Seq[DeviceId]] =
+    deviceStateChanged[TransformerRectifier.State, Seq[DeviceId]](trId) {
+      case TransformerRectifier.Powered(supply) => Some(trId +: supply)
       case _ => None
     }
 
@@ -52,8 +52,9 @@ abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId
 
   override def initialState = Unpowered
 
-  def power(supply: DeviceId) = setState(Powered(supply))
-  def unpower() = setState(Unpowered)
+  def power(supplyChain: Seq[DeviceId]) { setState(Powered(supplyChain)) }
+  def power(supply: DeviceId) { power(Seq(supply)) }
+  def unpower() { setState(Unpowered) }
 }
 
 class TrOne(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrOneId) {
@@ -71,9 +72,18 @@ class TrTwo(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, T
 }
 
 object TransformerRectifier {
+
   sealed trait State
-  case class Powered(by: DeviceId) extends State
+
+  case class Powered(supplyChain: Seq[DeviceId]) extends State
+
+  object Powered {
+
+    def apply(supply: DeviceId, moreSupply: DeviceId*): Powered = Powered(Seq(supply) ++ moreSupply)
+  }
+
   case object Unpowered extends State
+
   val InitialState = Unpowered
 
   val WasInitialized = StateChangedEvent(None, InitialState)

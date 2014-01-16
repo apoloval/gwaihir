@@ -130,7 +130,7 @@ class ContactorTest extends FlatSpec with Matchers {
   it must "close when GEN 1 is on but all others are off" in new ColdAndDarkSystem {
     sys.ac.genOne.powerOn()
     exec.loop()
-    sys.ac.busOneTieContactor.state should be (Contactor.Closed(GenOneId))
+    sys.ac.busOneTieContactor.state should be (Contactor.Closed(GenOneContId, GenOneId))
   }
 
   it must "remain open when GEN 1 is on but some other is on" in new ColdAndDarkSystem {
@@ -143,7 +143,7 @@ class ContactorTest extends FlatSpec with Matchers {
   it must "close when GEN 1 is off but some other is on" in new ColdAndDarkSystem {
     sys.ac.apuGen.powerOn()
     exec.loop()
-    sys.ac.busOneTieContactor.state should be (Contactor.Closed(ApuGenId))
+    sys.ac.busOneTieContactor.state should be (Contactor.Closed(ApuGenContId, ApuGenId))
   }
 
   "AC Bus 2 tie contactor" must "stay open when no power is available" in new ColdAndDarkSystem {
@@ -153,7 +153,7 @@ class ContactorTest extends FlatSpec with Matchers {
   it must "close when GEN 2 is on but all others are off" in new ColdAndDarkSystem {
     sys.ac.genTwo.powerOn()
     exec.loop()
-    sys.ac.busTwoTieContactor.state should be (Contactor.Closed(GenTwoId))
+    sys.ac.busTwoTieContactor.state should be (Contactor.Closed(GenTwoContId, GenTwoId))
   }
 
   it must "remain open when GEN 2 is on but some other is on" in new ColdAndDarkSystem {
@@ -166,14 +166,14 @@ class ContactorTest extends FlatSpec with Matchers {
   it must "close when GEN 2 is off but some other is on" in new ColdAndDarkSystem {
     sys.ac.apuGen.powerOn()
     exec.loop()
-    sys.ac.busTwoTieContactor.state should be (Contactor.Closed(ApuGenId))
+    sys.ac.busTwoTieContactor.state should be (Contactor.Closed(ApuGenContId, ApuGenId))
   }
 
   "AC ESS feed tie normal contactor" must "close when AC BUS 1 is energized and switch is NORM" in new ColdAndDarkSystem {
     sys.ac.acEssFeedNormContactor.state should be (Contactor.Open)
-    sys.ac.busOne.power(GenOneId)
+    sys.ac.busOne.power(Seq(GenOneContId, GenOneId))
     exec.loop()
-    sys.ac.acEssFeedNormContactor.state should be (Contactor.Closed(GenOneId))
+    sys.ac.acEssFeedNormContactor.state should be (Contactor.Closed(AcBusOneId, GenOneContId, GenOneId))
   }
 
   it must "remain open when AC BUS 1 is energized but switch is ALT" in new ColdAndDarkSystem {
@@ -185,10 +185,11 @@ class ContactorTest extends FlatSpec with Matchers {
 
   "AC ESS feed tie alt contactor" must "close when AC BUS 2 is energized and switch is ALT" in new ColdAndDarkSystem {
     sys.ac.acEssFeedAltContactor.state should be (Contactor.Open)
-    sys.ac.busTwo.power(ApuGenId)
+    sys.ac.busTwo.power(Seq(AcBusTwoTieContId, ApuGenContId, ApuGenId))
     sys.panel.acEssFeedSwitch.switchOn()
     exec.loop()
-    sys.ac.acEssFeedAltContactor.state should be (Contactor.Closed(ApuGenId))
+    sys.ac.acEssFeedAltContactor.state should be (
+      Contactor.Closed(AcBusTwoId, AcBusTwoTieContId, ApuGenContId, ApuGenId))
   }
 
   it must "remain open when AC BUS 2 is energized but switch is NORM" in new ColdAndDarkSystem {
@@ -209,27 +210,29 @@ class ContactorTest extends FlatSpec with Matchers {
     sys.dc.trTwoContactor.state should be (Contactor.Closed(TrTwoId))
   }
 
-  "DC Bus tie 1 contactor" must "close when TR 1 cont is closed" in new ColdAndDarkSystem {
+  "DC Bus tie 1 contactor" must "close when DC BUS 1 is powered by TR1" in new ColdAndDarkSystem {
     sys.dc.trOne.power(GenOneId)
     exec.loop()
-    sys.dc.tieOneContactor.state should be (Contactor.Closed(TrOneId))
+    sys.dc.tieOneContactor.state should be (Contactor.Closed(DcBusOneId, TrOneContactorId, TrOneId))
   }
 
-  it must "close when TR 1 cont is open and TR 2 cont is closed" in new ColdAndDarkSystem {
+  it must "close when DC BAT BUS is powered by TR 2" in new ColdAndDarkSystem {
     sys.dc.trTwo.power(ApuGenId)
     exec.loop()
-    sys.dc.tieOneContactor.state should be (Contactor.Closed(TrTwoId))
+    sys.dc.tieOneContactor.state should be (
+      Contactor.Closed(DcBatteryBusId, DcTieTwoContId, DcBusTwoId, TrTwoContactorId, TrTwoId))
   }
 
-  "DC Bus tie 2 contactor" must "close when TR 1 cont is closed and TR 2 cont is open" in new ColdAndDarkSystem {
+  "DC Bus tie 2 contactor" must "close when DC BAT BUS is powered by TR 1" in new ColdAndDarkSystem {
     sys.dc.trOne.power(GenOneId)
     exec.loop()
-    sys.dc.tieTwoContactor.state should be (Contactor.Closed(TrOneId))
+    sys.dc.tieTwoContactor.state should be (
+      Contactor.Closed(DcBatteryBusId, DcTieOneContId, DcBusOneId, TrOneContactorId, TrOneId))
   }
 
-  it must "close when TR 1 cont is open and TR 2 cont is closed" in new ColdAndDarkSystem {
+  it must "close when DC BUS 2 is powered by TR 2 and TR 1 is off" in new ColdAndDarkSystem {
     sys.dc.trTwo.power(ApuGenId)
     exec.loop()
-    sys.dc.tieTwoContactor.state should be (Contactor.Closed(TrTwoId))
+    sys.dc.tieTwoContactor.state should be (Contactor.Closed(DcBusTwoId, TrTwoContactorId, TrTwoId))
   }
 }

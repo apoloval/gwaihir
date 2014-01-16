@@ -32,9 +32,16 @@ trait BusConditions {
   }
 
   /** A condition consisting of the given bus to be energized by given supplier. */
-  def busIsEnergizedBy(busId: DeviceId): Condition[DeviceId] =
-    deviceStateChanged[Bus.State, DeviceId](busId) {
-      case Bus.Energized(dev) => Some(dev)
+  def busIsEnergizedBy(busId: DeviceId): Condition[Seq[DeviceId]] =
+    deviceStateChanged[Bus.State, Seq[DeviceId]](busId) {
+      case Bus.Energized(supplyChain) => Some(busId +: supplyChain)
+      case _ => None
+    }
+
+  /** A condition consisting of the given bus to be energized by given supplier. */
+  def busIsEnergizedBy(busId: DeviceId, from: DeviceId): Condition[Seq[DeviceId]] =
+    deviceStateChanged[Bus.State, Seq[DeviceId]](busId) {
+      case Bus.Energized(supplyChain @ `from` :: _) => Some(busId +:supplyChain)
       case _ => None
     }
 
@@ -52,8 +59,9 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 
   override def init() = ctx.eventChannel.send(id, WasInitialized)
 
-  def power(by: DeviceId) = setState(Energized(by))
-  def unpower() = setState(DeEnergized)
+  def power(supplyChain: Seq[DeviceId]) { setState(Energized(supplyChain)) }
+  def power(supply: DeviceId) { power(Seq(supply)) }
+  def unpower() { setState(DeEnergized) }
 }
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
@@ -72,31 +80,27 @@ class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {
 
-  watch(contIsClosed(TrOneContactorId)) {
-    case true => power(TrOneId)
-    case false => unpower()
-  }
+  watch(contIsClosedBy(TrOneContactorId))
+  { supplyChain => power(supplyChain) }
+  { unpower() }
 }
 
 class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
 
-  watch(contIsClosed(TrTwoContactorId)) {
-    case true => power(TrTwoId)
-    case false => unpower()
-  }
+  watch(contIsClosedBy(TrTwoContactorId))
+  { supplyChain => power(supplyChain) }
+  { unpower() }
 }
 
 class DcBatteryBus()(implicit ctx: SimulationContext) extends Bus(ctx, DcBatteryBusId) {
 
   watch(
-    contIsClosedBy(DcTieOneContId),
-    contIsClosedBy(DcTieTwoContId) when contIsOpen(DcTieOneContId),
-    contIsClosedBy(BatteryOneContId) when (
-      contIsOpen(DcTieOneContId) and contIsOpen(DcTieTwoContId)),
-    contIsClosedBy(BatteryTwoContId) when (
-      contIsOpen(DcTieOneContId) and contIsOpen(DcTieTwoContId))
+    contIsClosedBy(DcTieOneContId, DcBusOneId),
+    contIsClosedBy(DcTieTwoContId, DcBusTwoId),
+    contIsClosedBy(BatteryOneContId, BatteryOneId),
+    contIsClosedBy(BatteryTwoContId, BatteryTwoId)
   )
-  { supplier => power(supplier) }
+  { supplyChain => power(supplyChain) }
   { unpower() }
 }
 
@@ -105,7 +109,7 @@ class HotBus(ctx: SimulationContext, busId: DeviceId, batteryId: DeviceId)
 
   watch(deviceIsInitialized(batteryId))
   {
-    case true => power(batteryId)
+    case true => power(Seq(batteryId))
     case false => unpower()
   }
 }
@@ -128,8 +132,17 @@ class DcEssentialBus()(implicit ctx: SimulationContext) extends Bus(ctx, DcEssBu
 object Bus {
 
   sealed trait State
-  case class Energized(by: DeviceId) extends State
+
+  case class Energized(supplyChain: Seq[DeviceId]) extends State
+
+  object Energized {
+
+    def apply(supply: DeviceId, moreSupply: DeviceId*): Energized =
+      Energized(Seq(supply) ++ moreSupply)
+  }
+
   case object DeEnergized extends State
+
   val InitialState = DeEnergized
 
   val WasInitialized = StateChangedEvent(None, InitialState)

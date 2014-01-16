@@ -36,9 +36,17 @@ trait ContactorConditions {
   }
 
   /** A condition consisting of the given contactor to be closed with some supplier. */
-  def contIsClosedBy(contId: DeviceId): Condition[DeviceId] =
-    deviceStateChanged[Contactor.State, DeviceId](contId) {
-      case Contactor.Closed(supplier) => Some(supplier)
+  def contIsClosedBy(contId: DeviceId): Condition[Seq[DeviceId]] =
+    deviceStateChanged[Contactor.State, Seq[DeviceId]](contId) {
+      case Contactor.Closed(supplierChain) => Some(contId +: supplierChain)
+      case _ => None
+    }
+
+  /** A condition consisting of the given contactor to be closed with some supplier. */
+  def contIsClosedBy(contId: DeviceId, from: DeviceId): Condition[Seq[DeviceId]] =
+    deviceStateChanged[Contactor.State, Seq[DeviceId]](contId) {
+      // case Contactor.Closed(supplierChain @ `from` :: _) => Some(contId +: supplierChain)
+      case Contactor.Closed(supplierChain) if supplierChain.head == from => Some(contId +: supplierChain)
       case _ => None
     }
 
@@ -75,15 +83,18 @@ abstract class Contactor(val ctx: SimulationContext, val id: DeviceId)
 
   override def initialState = Contactor.Open
 
-  def open() = setState(Open)
-  def close(poweredBy: DeviceId) = setState(Closed(poweredBy))
+  def open() { setState(Open) }
+
+  def close(supplyChain: Seq[DeviceId]) { setState(Closed(supplyChain)) }
+
+  def close(supply: DeviceId) { close(Seq(supply)) }
 }
 
 class GenContactor(ctx: SimulationContext, contId: DeviceId, genId: DeviceId)
     extends Contactor(ctx, contId) {
 
   watch(genIsOn(genId)) {
-    case true => close(genId)
+    case true => close(Seq(genId))
     case false => open()
   }
 }
@@ -101,7 +112,7 @@ class ApuGenContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, 
     anyContIsOpen(GenOneContId, GenTwoContId)
 
   watch(isClosed) {
-    case true => close(ApuGenId)
+    case true => close(Seq(ApuGenId))
     case false => open()
   }
 }
@@ -109,7 +120,7 @@ class ApuGenContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, 
 class ExtPowerContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, ExtPowerContId) {
 
   watch(genIsOn(ExtPowerId) and anyContIsOpen(GenOneContId, GenTwoContId)) {
-    case true => close(ExtPowerId)
+    case true => close(Seq(ExtPowerId))
     case false => open()
   }
 }
@@ -124,10 +135,10 @@ class AcBusOneTieContactor()(implicit ctx: SimulationContext)
   val isClosedByGen2 = contIsOpen(GenOneContId) and contIsClosed(GenTwoContId)
   val isOpen = not(isClosedByGen1 or isClosedByApuGen or isClosedByExtPower or isClosedByGen2)
 
-  watch(isClosedByGen1) { isClosed => if (isClosed) { close(GenOneId) } }
-  watch(isClosedByApuGen) { isClosed => if (isClosed) { close(ApuGenId) } }
-  watch(isClosedByExtPower) { isClosed => if (isClosed) { close(ExtPowerId) } }
-  watch(isClosedByGen2) { isClosed => if (isClosed) { close(GenTwoId) } }
+  watch(isClosedByGen1) { isClosed => if (isClosed) { close(Seq(GenOneContId, GenOneId)) } }
+  watch(isClosedByApuGen) { isClosed => if (isClosed) { close(Seq(ApuGenContId, ApuGenId)) } }
+  watch(isClosedByExtPower) { isClosed => if (isClosed) { close(Seq(ExtPowerContId, ExtPowerId)) } }
+  watch(isClosedByGen2) { isClosed => if (isClosed) { close(Seq(GenTwoContId, GenTwoId)) } }
   watch(isOpen) { isOpen => if (isOpen) { open() } }
 }
 
@@ -141,10 +152,10 @@ class AcBusTwoTieContactor()(implicit ctx: SimulationContext)
   val isClosedByGen1 = contIsOpen(GenTwoContId) and contIsClosed(GenOneContId)
   val isOpen = not(isClosedByGen2 or isClosedByApuGen or isClosedByExtPower or isClosedByGen1)
 
-  watch(isClosedByGen2) { isClosed => if (isClosed) { close(GenTwoId) } }
-  watch(isClosedByApuGen) { isClosed => if (isClosed) { close(ApuGenId) } }
-  watch(isClosedByExtPower) { isClosed => if (isClosed) { close(ExtPowerId) } }
-  watch(isClosedByGen1) { isClosed => if (isClosed) { close(GenOneId) } }
+  watch(isClosedByGen2) { isClosed => if (isClosed) { close(Seq(GenTwoContId, GenTwoId)) } }
+  watch(isClosedByApuGen) { isClosed => if (isClosed) { close(Seq(ApuGenContId, ApuGenId)) } }
+  watch(isClosedByExtPower) { isClosed => if (isClosed) { close(Seq(ExtPowerContId, ExtPowerId)) } }
+  watch(isClosedByGen1) { isClosed => if (isClosed) { close(Seq(GenOneContId, GenOneId)) } }
   watch(isOpen) { isOpen => if (isOpen) { open() } }
 }
 
@@ -167,7 +178,7 @@ class AcEssFeedAltContactor()(implicit ctx: SimulationContext)
 class TrOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrOneContactorId) {
 
   watch(trIsPowered(TrOneId)) {
-    case true => close(TrOneId)
+    case true => close(Seq(TrOneId))
     case false => open()
   }
 }
@@ -175,23 +186,29 @@ class TrOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, T
 class TrTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrTwoContactorId) {
 
   watch(trIsPowered(TrTwoId)) {
-    case true => close(TrTwoId)
+    case true => close(Seq(TrTwoId))
     case false => open()
   }
 }
 
 class DcTieOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcTieOneContId) {
 
-  watch(contIsClosed(TrOneContactorId)) { if (_) { close(TrOneId) } }
-  watch(contIsOpen(TrOneContactorId) and contIsClosed(TrTwoContactorId)) { if (_) { close(TrTwoId) } }
-  watch(contIsOpen(TrOneContactorId) and contIsOpen(TrTwoContactorId)) { if (_) { open() } }
+  watch(
+    busIsEnergizedBy(DcBusOneId, TrOneContactorId),
+    busIsEnergizedBy(DcBatteryBusId, DcTieTwoContId)
+  )
+  { supplyChain =>  close(supplyChain) }
+  { open() }
 }
 
 class DcTieTwoContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcTieTwoContId) {
 
-  watch(contIsOpen(TrTwoContactorId) and contIsClosed(TrOneContactorId)) { if (_) { close(TrOneId) } }
-  watch(contIsOpen(TrOneContactorId) and contIsClosed(TrTwoContactorId)) { if (_) { close(TrTwoId) } }
-  watch(contIsOpen(TrOneContactorId) and contIsOpen(TrTwoContactorId)) { if (_) { open() } }
+  watch(
+    busIsEnergizedBy(DcBusTwoId, TrTwoContactorId) when contIsOpen(TrOneContactorId),
+    busIsEnergizedBy(DcBatteryBusId, DcTieOneContId)
+  )
+  { supplyChain =>  close(supplyChain) }
+  { open() }
 }
 
 class DcEssTieContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, DcEssTieContId) {
@@ -219,8 +236,16 @@ class StaticInvTwoContactor()(implicit ctx: SimulationContext)
 object Contactor {
 
   sealed trait State
+
   case object Open extends State
-  case class Closed(poweredBy: DeviceId) extends State
+
+  case class Closed(supplyChain: Seq[DeviceId]) extends State
+
+  object Closed {
+
+    def apply(supply: DeviceId, moreSupply: DeviceId*): Closed = Closed(Seq(supply) ++ moreSupply)
+  }
+
   val InitialState = Open
 
   val WasInitialized = StateChangedEvent(None, InitialState)
