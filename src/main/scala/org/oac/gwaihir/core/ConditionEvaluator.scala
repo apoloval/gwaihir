@@ -194,21 +194,28 @@ case class EventMatchCondition[T](dev: DeviceId)(pred: PartialFunction[Any, Opti
   * @param cond The condition to watch
   * @param whenMet The action to be executed when condition is met
   */
-class ConditionWatcher[T](eventChannel: EventChannel, cond: Condition[T], whenMet: T => Unit) {
+class ConditionWatcher[T](eventChannel: EventChannel)
+                         (watched: (Condition[T], T => Unit)*)
+                         (whenNotMet: => Unit){
 
   var ctx: Map[DeviceId, Any] = Map.empty
 
-  cond.conditionedBy.foreach { dev =>
-    eventChannel.subscribe(dev)(onNewEvent)
-  }
+  for {
+    (cond, _) <- watched
+    dev <- cond.conditionedBy
+  } eventChannel.subscribe(dev)(onNewEvent)
 
   private def onNewEvent: EventChannel.Subscription = {
     case (sender, event) =>
       ctx += sender -> event
-      cond.eval(ctx) match {
-        case Some(v) => whenMet(v)
+      var notMatched = true
+      for ((cond, act) <- watched if notMatched) cond.eval(ctx) match {
+        case Some(v) =>
+          notMatched = false
+          act(v)
         case _ => ()
       }
+      if (notMatched) { whenNotMet }
     case _ => ()
   }
 }
@@ -220,8 +227,17 @@ trait ConditionEvaluator {
 
   def not(cond: Condition[Boolean]): Condition[Boolean] = new NotCondition(cond)
 
-  def watch[T](cond: Condition[T])(whenMet: T => Unit) =
-    new ConditionWatcher(eventChannel, cond, whenMet)
+  def watch[T](watched: (Condition[T], T => Unit)*)(whenNotMet: => Unit) {
+    new ConditionWatcher(eventChannel)(watched: _*)(whenNotMet)
+  }
+
+  def watch[T](cond: Condition[T]*)(whenMet: T => Unit)(whenNotMet: => Unit) {
+    watch(cond.map(c => (c, whenMet)): _*)(whenNotMet)
+  }
+
+  def watch(cond: Condition[Boolean])(whenMet: Boolean => Unit) {
+    watch[Boolean](cond)(whenMet)(())
+  }
 
   def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Option[Boolean]]): BooleanCondition =
     new EventMatchCondition[Boolean](dev)(pred) with BooleanLogic {}

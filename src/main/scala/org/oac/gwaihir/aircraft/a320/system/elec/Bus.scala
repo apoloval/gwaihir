@@ -54,30 +54,20 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 
   def power(by: DeviceId) = setState(Energized(by))
   def unpower() = setState(DeEnergized)
-
-  protected def watchPoweredByContactor(contId: DeviceId) =
-    watch(contIsClosedBy(contId)) { supplier => power(supplier) }
-
-  protected def watchUnpoweredByContactors(contIds: DeviceId*) = {
-    val allContsAreOpen = contIds.foldLeft[BooleanCondition](TrueCondition) {
-      (c, cont) => c and contIsOpen(cont)
-    }
-    watch(allContsAreOpen) { areOpen => if (areOpen) { unpower() } }
-  }
 }
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
 
-  watchPoweredByContactor(GenOneContId)
-  watchPoweredByContactor(AcBusOneTieContId)
-  watchUnpoweredByContactors(GenOneContId, AcBusOneTieContId)
+  watch(contIsClosedBy(GenOneContId), contIsClosedBy(AcBusOneTieContId))
+  { supplier => power(supplier) }
+  { unpower() }
 }
 
 class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
-  watchPoweredByContactor(GenTwoContId)
-  watchPoweredByContactor(AcBusTwoTieContId)
-  watchUnpoweredByContactors(GenTwoContId, AcBusTwoTieContId)
+  watch(contIsClosedBy(GenTwoContId), contIsClosedBy(AcBusTwoTieContId))
+  { supplier => power(supplier) }
+  { unpower() }
 }
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {

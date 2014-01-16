@@ -151,19 +151,17 @@ class AcBusTwoTieContactor()(implicit ctx: SimulationContext)
 class AcEssFeedNormContactor()(implicit ctx: SimulationContext)
     extends Contactor(ctx, AcEssFeedNormContactorId) {
 
-  watch(busIsEnergizedBy(AcBusOneId) when switchIsOff(AcEssFeedSwitchId)) { poweredBy =>
-    close(poweredBy)
-  }
-  watch(busIsUnenergized(AcBusOneId) or switchIsOn(AcEssFeedSwitchId)) { if (_) open() }
+  watch(busIsEnergizedBy(AcBusOneId) when switchIsOff(AcEssFeedSwitchId))
+  { poweredBy => close(poweredBy) }
+  { open() }
 }
 
 class AcEssFeedAltContactor()(implicit ctx: SimulationContext)
     extends Contactor(ctx, AcEssFeedAltContactorId) {
 
-  watch(busIsEnergizedBy(AcBusTwoId) when switchIsOn(AcEssFeedSwitchId)) { poweredBy =>
-    close(poweredBy)
-  }
-  watch(busIsUnenergized(AcBusTwoId) or switchIsOff(AcEssFeedSwitchId)) { if (_) open() }
+  watch(busIsEnergizedBy(AcBusTwoId) when switchIsOn(AcEssFeedSwitchId))
+  { poweredBy => close(poweredBy) }
+  { open() }
 }
 
 class TrOneContactor()(implicit ctx: SimulationContext) extends Contactor(ctx, TrOneContactorId) {

@@ -58,14 +58,16 @@ abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId
 
 class TrOne(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrOneId) {
 
-  watch(busIsEnergizedBy(AcBusOneId)) { supply => power(supply)}
-  watch(busIsUnenergized(AcBusOneId)) { if (_) unpower() }
+  watch(busIsEnergizedBy(AcBusOneId))
+  { supply => power(supply)}
+  { unpower() }
 }
 
 class TrTwo(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrTwoId) {
 
-  watch(busIsEnergizedBy(AcBusTwoId)) { supply => power(supply)}
-  watch(busIsUnenergized(AcBusTwoId)) { if (_) unpower() }
+  watch(busIsEnergizedBy(AcBusTwoId))
+  { supply => power(supply)}
+  { unpower() }
 }
 
 object TransformerRectifier {
