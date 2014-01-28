@@ -16,22 +16,42 @@
 
 package org.oac.gwaihir.aircraft.a320.system.elec
 
-import org.scalatest.{Matchers, FlatSpec}
+import org.scalatest.{WordSpec, Matchers}
 
-class TransformerRectifierTest extends FlatSpec with Matchers {
+class TransformerRectifierTest extends WordSpec with Matchers {
 
-  "TR1" must "be powered when AC BUS 1 is energized" in new ColdAndDarkSystem {
-    sys.ac.trOne.state should be (TransformerRectifier.Unpowered)
-    sys.ac.busOne.power(Seq(GenOneContId, GenOneId))
-    exec.loop()
-    sys.ac.trOne.state should be (TransformerRectifier.Powered(AcBusOneId, GenOneContId, GenOneId))
+  "TR1" must {
+    "be powered when AC BUS 1 is energized" in new ColdAndDarkSystem {
+      sys.trOne.state should be (TransformerRectifier.Unpowered)
+      sys.acBusOne.power(Seq(GenOneId))
+      exec.loop()
+      sys.trOne.state should be (TransformerRectifier.Powered(AcBusOneId, GenOneId))
+    }
   }
 
-  "TR2" must "be powered when AC BUS 2 is energized" in new ColdAndDarkSystem {
-    sys.ac.trTwo.state should be (TransformerRectifier.Unpowered)
-    sys.ac.busTwo.power(Seq(AcBusTwoTieContId, ApuGenContId, ApuGenId))
-    exec.loop()
-    sys.ac.trTwo.state should be (
-      TransformerRectifier.Powered(AcBusTwoId, AcBusTwoTieContId, ApuGenContId, ApuGenId))
+  "TR2" must {
+    "be powered when AC BUS 2 is energized" in new ColdAndDarkSystem {
+      sys.trTwo.state should be (TransformerRectifier.Unpowered)
+      sys.acBusTwo.power(Seq(ApuGenId))
+      exec.loop()
+      sys.trTwo.state should be (
+        TransformerRectifier.Powered(AcBusTwoId, ApuGenId))
+    }
+  }
+
+  "ESS TR" must {
+    "be powered by AC ESS BUS when any TR is not operating" in new ColdAndDarkSystem {
+      sys.essTr.state should be (TransformerRectifier.Unpowered)
+      sys.acEssBus.power(Seq(AcBusOneId, GenOneId))
+      exec.loop()
+      sys.essTr.state should be (TransformerRectifier.Powered(AcEssBusId, AcBusOneId, GenOneId))
+    }
+
+    "be powered by EMER GEN when it is operating" in new ColdAndDarkSystem {
+      sys.essTr.state should be (TransformerRectifier.Unpowered)
+      sys.emerGen.powerOn()
+      exec.loop()
+      sys.essTr.state should be (TransformerRectifier.Powered(EmerGenId))
+    }
   }
 }

@@ -20,75 +20,37 @@ import org.oac.gwaihir.aircraft.a320.common.{SwitchConditions, Switch}
 import org.oac.gwaihir.core._
 
 trait ElectricalSystemConditions
-  extends ContactorConditions
-  with GeneratorConditions
+  extends GeneratorConditions
   with BusConditions
   with SwitchConditions
   with TransformerRectifierConditions { self: ConditionEvaluator => }
 
-class ElectricalSystem(implicit val ctx: SimulationContext) extends Device {
+class ElectricalSystem(implicit val ctx: SimulationContext) extends DeviceSystem {
 
   override val id = Id
 
-  val ac = new DeviceSystem {
+  // Generators
+  val genOne = newDevice(new GenOne())
+  val genTwo = newDevice(new GenTwo())
+  val apuGen = newDevice(new ApuGen())
+  val extPower = newDevice(new ExtPower())
+  val emerGen = newDevice(new EmerGen())
 
-    override implicit val ctx = ElectricalSystem.this.ctx
-    override val id = AcSubsystemId
+  // Buses
+  val acBusOne = newDevice(new AcBusOne())
+  val acBusTwo = newDevice(new AcBusTwo())
+  val acEssBus = newDevice(new AcEssBus())
+  val dcBusOne = newDevice(new DcBusOne())
+  val dcBusTwo = newDevice(new DcBusTwo())
+  val dcBatBus = newDevice(new DcBatteryBus())
+  val dcEssBus = newDevice(new DcEssentialBus())
 
-    val acEssFeedNormContactor = newDevice(new AcEssFeedNormContactor())
-    val acEssFeedAltContactor = newDevice(new AcEssFeedAltContactor())
-    val apuGen = newDevice(new ApuGen())
-    val apuGenContactor = newDevice(new ApuGenContactor())
-    val busOne = newDevice(new AcBusOne())
-    val busOneTieContactor = newDevice(new AcBusOneTieContactor())
-    val busTwo = newDevice(new AcBusTwo())
-    val busTwoTieContactor = newDevice(new AcBusTwoTieContactor())
-    val extPower = newDevice(new ExtPower())
-    val extPowerContactor = newDevice(new ExtPowerContactor())
-    val genOne = newDevice(new GenOne())
-    val genOneContactor = newDevice(new GenOneContactor())
-    val genTwo = newDevice(new GenTwo())
-    val genTwoContactor = newDevice(new GenTwoContactor())
-    val trOne = newDevice(new TrOne())
-    val trTwo = newDevice(new TrTwo())
-  }
+  // Transformer rectifiers (TRs)
+  val trOne = newDevice(new TrOne())
+  val trTwo = newDevice(new TrTwo())
+  val essTr = newDevice(new EssTr())
 
-  val dc = new DeviceSystem {
-
-    override implicit val ctx = ElectricalSystem.this.ctx
-    override val id = DcSubsystemId
-
-    val batteryBus = newDevice(new DcBatteryBus())
-    val batteryOne = newDevice(new BatteryOne())
-    val batteryTwo = newDevice(new BatteryTwo())
-    val busOne = newDevice(new DcBusOne())
-    val busTwo = newDevice(new DcBusTwo())
-    val essBus = newDevice(new DcEssentialBus())
-    val essTieCont = newDevice(new DcEssTieContactor())
-    val essTrCont = newDevice(new EssTrContactor())
-    val hotBusOne = newDevice(new HotBusOne())
-    val hotBusTwo = newDevice(new HotBusTwo())
-    val staticInvOneCont = newDevice(new StaticInvOneContactor())
-    val staticInvTwoCont = newDevice(new StaticInvTwoContactor())
-    val tieOneContactor = newDevice(new DcTieOneContactor())
-    val tieTwoContactor = newDevice(new DcTieTwoContactor())
-    val trOne = newDevice(new TrOne())
-    val trOneContactor = newDevice(new TrOneContactor())
-    val trTwo = newDevice(new TrTwo())
-    val trTwoContactor = newDevice(new TrTwoContactor())
-  }
-
-  val panel = new DeviceSystem {
-
-    override implicit val ctx = ElectricalSystem.this.ctx
-    override val id = PanelSubsystemId
-
-    val acEssFeedSwitch = newDevice(new Switch(AcEssFeedSwitchId))
-  }
-
-  override def init() {
-    ac.init()
-    dc.init()
-    panel.init()
-  }
+  // Panel 
+  val acEssFeedButton = newDevice(new AcEssFeedButton())
+  val acBusTieButton = newDevice(new AcBusTieButton())
 }

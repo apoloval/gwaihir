@@ -52,23 +52,37 @@ trait Condition[T] extends EventConditioned {
     */
   def eval(ctx: EvalContext): Option[T]
 
-  /** Convenience function to create a WhenCondition. */
-  def when(c: Condition[Boolean]): Condition[T] = WhenCondition(this, c)
-}
-
-/** A trait that provides some convenience functions to perform boolean logic. */
-trait BooleanLogic {
-
-  self: Condition[Boolean] =>
-
   /** Create a new logic-and condition from this one and the one passed as argument.  */
-  def and(c: Condition[Boolean]) = new AndCondition(this, c)
+  def and[T1](c: Condition[T1]) = new AndCondition(this, c)
 
   /** Create a new logic-or condition from this one and the one passed as argument.  */
-  def or(c: Condition[Boolean]) = new OrCondition(this, c)
+  def or[T1](c: Condition[T1]) = new OrCondition(this, c)
 
   /** Create a new logic-xor condition from this one and the one passed as argument.  */
-  def xor(c: Condition[Boolean]) = new XorCondition(this, c)
+  def xor[T1](c: Condition[T1]) = new XorCondition(this, c)
+
+  /** Convenience function to create a WhenCondition. */
+  def when[T1](c: Condition[T1]): Condition[T] = WhenCondition(this, c)
+
+  /** Map this condition to another evaluation type. */
+  def map[T1](f: T => Option[T1]) = new MappedCondition[T, T1](this, f)
+}
+
+/** A condition that is mapping another condition.
+  *
+  * @param mapped The condition that is being mapped
+  * @param mapFunc The function used to map the condition
+  * @tparam T1 The evaluation type of the mapped condition
+  * @tparam T2 The evaluation type of the mapper condition
+  */
+class MappedCondition[T1, T2](mapped: Condition[T1], mapFunc: T1 => Option[T2]) extends Condition[T2] {
+
+  def eval(ctx: EvalContext): Option[T2] = mapped.eval(ctx) match {
+    case Some(expr) => mapFunc(expr)
+    case None => None
+  }
+
+  def conditionedBy = mapped.conditionedBy
 }
 
 /** A event-conditioned object that depends not in any event from any device. */
@@ -95,72 +109,65 @@ trait BinaryEventConditioned extends EventConditioned {
 }
 
 /** A condition that always evaluates to true. */
-object TrueCondition extends Condition[Boolean] with BooleanLogic with NoEventConditioned {
+object TrueCondition extends Condition[Unit] with NoEventConditioned {
 
-  def eval(ctx: EvalContext) = Some(true)
+  def eval(ctx: EvalContext) = Some(())
 }
 
 /** A boolean condition that always evaluates to false. */
-object FalseCondition extends Condition[Boolean] with BooleanLogic with NoEventConditioned {
+object FalseCondition extends Condition[Unit] with NoEventConditioned {
 
-  def eval(ctx: EvalContext) = Some(false)
+  def eval(ctx: EvalContext) = None
 }
 
 /** A boolean condition that evaluates to the negation of another boolean condition. */
-final case class NotCondition(c: Condition[Boolean])
-    extends Condition[Boolean] with BooleanLogic with UnaryEventConditioned {
+final case class NotCondition[T](c: Condition[T])
+    extends Condition[Unit] with UnaryEventConditioned {
 
-  override def eval(ctx: EvalContext): Option[Boolean] = c.eval(ctx) match {
-    case None => None
-    case Some(x) => Some(!x)
+  override def eval(ctx: EvalContext): Option[Unit] = c.eval(ctx) match {
+    case None => Some(())
+    case Some(_) => None
   }
 }
 
 /** A boolean condition that evaluates to the logic-and of other two boolean conditions. */
-final case class AndCondition(c1: Condition[Boolean], c2: Condition[Boolean])
-    extends Condition[Boolean] with BooleanLogic with BinaryEventConditioned {
+final case class AndCondition[T1, T2](c1: Condition[T1], c2: Condition[T2])
+    extends Condition[Unit] with BinaryEventConditioned {
 
-  override def eval(ctx: EvalContext): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
-    case (None, _) => None
-    case (_, None) => None
-    case (Some(_), Some(false)) => Some(false)
-    case (Some(false), Some(_)) => Some(false)
-    case _ => Some(true)
+  override def eval(ctx: EvalContext): Option[Unit] = (c1.eval(ctx), c2.eval(ctx)) match {
+    case (Some(_), Some(_)) => Some(())
+    case _ => None
   }
 }
 
 /** A boolean condition that evaluates to the logic-or of other two boolean conditions. */
-case class OrCondition(c1: Condition[Boolean], c2: Condition[Boolean])
-    extends Condition[Boolean] with BooleanLogic with BinaryEventConditioned {
+case class OrCondition[T1, T2](c1: Condition[T1], c2: Condition[T2])
+    extends Condition[Unit] with BinaryEventConditioned {
 
-  override def eval(ctx: EvalContext): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
-    case (None, _) => None
-    case (_, None) => None
-    case (Some(_), Some(true)) => Some(true)
-    case (Some(true), Some(_)) => Some(true)
-    case _ => Some(false)
+  override def eval(ctx: EvalContext): Option[Unit] = (c1.eval(ctx), c2.eval(ctx)) match {
+    case (Some(_), _) => Some(())
+    case (_, Some(_)) => Some(())
+    case _ => None
   }
 }
 
 /** A boolean condition that evaluates to the logic-xor of other two boolean conditions. */
-case class XorCondition(c1: Condition[Boolean], c2: Condition[Boolean])
-    extends Condition[Boolean] with BooleanLogic with BinaryEventConditioned {
+case class XorCondition[T1, T2](c1: Condition[T1], c2: Condition[T2])
+    extends Condition[Unit] with BinaryEventConditioned {
 
-  override def eval(ctx: EvalContext): Option[Boolean] = (c1.eval(ctx), c2.eval(ctx)) match {
-    case (None, _) => None
-    case (_, None) => None
-    case (Some(false), Some(true)) => Some(true)
-    case (Some(true), Some(false)) => Some(true)
-    case _ => Some(false)
+  override def eval(ctx: EvalContext): Option[Unit] = (c1.eval(ctx), c2.eval(ctx)) match {
+    case (None, Some(_)) => Some(())
+    case (Some(_), None) => Some(())
+    case _ => None
   }
 }
 
 /** A condition that evaluates another condition when a boolean condition is met. */
-case class WhenCondition[T](c1: Condition[T], c2: Condition[Boolean])
-    extends Condition[T] with BinaryEventConditioned {
+case class WhenCondition[T1, T2](c1: Condition[T1], c2: Condition[T2])
+    extends Condition[T1] with BinaryEventConditioned {
 
-  def eval(ctx: EvalContext): Option[T] = c2.eval(ctx) match {
-    case Some(true) => c1.eval(ctx)
+  def eval(ctx: EvalContext): Option[T1] = c2.eval(ctx) match {
+    case Some(x) => c1.eval(ctx)
     case _ => None
   }
 }
@@ -183,16 +190,15 @@ case class EventMatchCondition[T](dev: DeviceId)(pred: PartialFunction[Any, Opti
 
 /** An object that watchs conditions expecting them to be met.
   *
-  * A condition watcher wraps a condition object with the purpose be aware when that condition
-  * is met. Upon creation, it retrieves the set of devices whose events the condition depends on.
-  * Then it subscribes to the event channel for any event on these devices. When one of these
-  * events is received, the condition is evaluated. If the result of the evaluation is Some(),
-  * then the condition is considered to met and the action associated to the watcher is
-  * executed.
+  * A condition watcher wraps a sequence of pairs condition-action with the purpose be aware when
+  * any of these conditions is met. Upon creation, it retrieves the set of devices whose events
+  * each condition depends on. Then it subscribes to the event channel for any event on these
+  * devices. When one of these events is received, the conditions are evaluated. If the evaluation
+  * is positive, the action associated to it is executed.
   *
   * @param eventChannel The event channel to watch for condition inputs.
-  * @param cond The condition to watch
-  * @param whenMet The action to be executed when condition is met
+  * @param watched A sequence of pairs of condition-action to be watched
+  * @param whenNotMet An action to be executed when none of the conditions are met
   */
 class ConditionWatcher[T](eventChannel: EventChannel)
                          (watched: (Condition[T], T => Unit)*)
@@ -225,7 +231,7 @@ trait ConditionEvaluator {
 
   self: EventChannelProvider =>
 
-  def not(cond: Condition[Boolean]): Condition[Boolean] = new NotCondition(cond)
+  def not[T](cond: Condition[T]): Condition[Unit] = new NotCondition(cond)
 
   def watch[T](watched: (Condition[T], T => Unit)*)(whenNotMet: => Unit) {
     new ConditionWatcher(eventChannel)(watched: _*)(whenNotMet)
@@ -235,33 +241,29 @@ trait ConditionEvaluator {
     watch(cond.map(c => (c, whenMet)): _*)(whenNotMet)
   }
 
-  def watch(cond: Condition[Boolean])(whenMet: Boolean => Unit) {
-    watch[Boolean](cond)(whenMet)(())
-  }
+  def eventMatch[T](dev: DeviceId, pred: PartialFunction[Any, Option[T]]): Condition[T] =
+    new EventMatchCondition[T](dev)(pred)
 
-  def eventMatch(dev: DeviceId, pred: PartialFunction[Any, Option[Boolean]]): BooleanCondition =
-    new EventMatchCondition[Boolean](dev)(pred) with BooleanLogic {}
-
-  def deviceIsInitialized(dev: DeviceId): BooleanCondition = eventMatch(dev, {
-    case StateChangedEvent(None, _) => Some(true)
+  def deviceIsInitialized(dev: DeviceId): Condition[DeviceId] = eventMatch(dev, {
+    case StateChangedEvent(None, _) => Some(dev)
     case _ => None
   })
 
-  def deviceStateChanged[State : Manifest, T](dev: DeviceId)(eval: State => Option[T]): Condition[T] =
-    EventMatchCondition[T](dev) {
-      case StateChangedEvent(_, state: State) => for { result <- eval(state) } yield result
+  def deviceStateChanged[State : Manifest](dev: DeviceId): Condition[(DeviceId, State)] =
+    EventMatchCondition[(DeviceId, State)](dev) {
+      case StateChangedEvent(_, s: State) => Some(dev -> s)
       case _ => None
     }
 
-  def deviceIs[State](dev: DeviceId, state: State): BooleanCondition = eventMatch(dev, {
-    case StateChangedEvent(_, `state`) => Some(true)
-    case _ => Some(false)
+  def deviceIs[State](dev: DeviceId, state: State): Condition[DeviceId] = eventMatch(dev, {
+    case StateChangedEvent(_, `state`) => Some(dev)
+    case _ => None
   })
 
-  def deviceIs[State : Manifest](dev: DeviceId)
-                                (pred: PartialFunction[State, Boolean]): BooleanCondition =
+  def deviceIs[State : Manifest, T](dev: DeviceId)
+                                (pred: PartialFunction[State, Option[T]]): Condition[T] =
     eventMatch(dev, {
-      case StateChangedEvent(_, s: State) => Some(pred(s))
-      case _ => Some(false)
+      case StateChangedEvent(_, s: State) => pred(s)
+      case _ => None
     })
 }

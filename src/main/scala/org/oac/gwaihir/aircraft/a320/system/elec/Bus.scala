@@ -17,36 +17,37 @@
 package org.oac.gwaihir.aircraft.a320.system.elec
 
 import org.oac.gwaihir.core._
+import org.oac.gwaihir.aircraft.a320.common.Switch
 
 /** A trait providing matching conditions for events sent by buses. */
 trait BusConditions {
   self: ConditionEvaluator =>
 
   /** A condition consistent of the given bus to be in the given state. */
-  def busIs(busId: DeviceId, state: Bus.State): BooleanCondition  = deviceIs(busId, state)
+  def busIs(busId: DeviceId, state: Bus.State): Condition[DeviceId]  = deviceIs(busId, state)
 
   /** A condition consisting of the given bus to be energized. */
-  def busIsEnergized(busId: DeviceId): BooleanCondition  = deviceIs[Bus.State](busId) {
-    case Bus.Energized(_) => true
-    case _ => false
+  def busIsEnergized(busId: DeviceId): Condition[DeviceId] = deviceIs[Bus.State, DeviceId](busId) {
+    case Bus.Energized(_) => Some(busId)
+    case _ => None
   }
 
   /** A condition consisting of the given bus to be energized by given supplier. */
-  def busIsEnergizedBy(busId: DeviceId): Condition[Seq[DeviceId]] =
-    deviceStateChanged[Bus.State, Seq[DeviceId]](busId) {
-      case Bus.Energized(supplyChain) => Some(busId +: supplyChain)
+  def busIsEnergizedBy(busId: DeviceId): Condition[(DeviceId, Seq[DeviceId])] =
+    deviceStateChanged[Bus.State](busId).map {
+      case (_, Bus.Energized(supplyChain)) => Some(busId -> supplyChain)
       case _ => None
     }
 
   /** A condition consisting of the given bus to be energized by given supplier. */
-  def busIsEnergizedBy(busId: DeviceId, from: DeviceId): Condition[Seq[DeviceId]] =
-    deviceStateChanged[Bus.State, Seq[DeviceId]](busId) {
-      case Bus.Energized(supplyChain @ `from` :: _) => Some(busId +:supplyChain)
+  def busIsEnergizedBy(busId: DeviceId, from: DeviceId): Condition[(DeviceId, Seq[DeviceId])] =
+    deviceStateChanged[Bus.State](busId).map {
+      case (_, Bus.Energized(supplyChain @ `from` :: _)) => Some(busId -> supplyChain)
       case _ => None
     }
 
   /** A condition consisting of the given bus to be unenergized. */
-  def busIsUnenergized(busId: DeviceId): BooleanCondition  = busIs(busId, Bus.DeEnergized)
+  def busIsUnenergized(busId: DeviceId): Condition[DeviceId] = busIs(busId, Bus.DeEnergized)
 }
 
 abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
@@ -66,41 +67,70 @@ abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
 
 class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
 
-  watch(contIsClosedBy(GenOneContId), contIsClosedBy(AcBusOneTieContId))
-  { supplier => power(supplier) }
+  watch(
+    genIsOn(GenOneId),
+    genIsOn(ExtPowerId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
+    genIsOn(ApuGenId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
+    genIsOn(GenTwoId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto))
+  { bus => power(bus) }
   { unpower() }
 }
 
 class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
-  watch(contIsClosedBy(GenTwoContId), contIsClosedBy(AcBusTwoTieContId))
-  { supplier => power(supplier) }
+  watch(
+    genIsOn(GenTwoId),
+    genIsOn(ExtPowerId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
+    genIsOn(ApuGenId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
+    genIsOn(GenOneId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto))
+  { bus => power(bus) }
+  { unpower() }
+}
+
+class AcEssBus()(implicit ctx: SimulationContext) extends Bus(ctx, AcEssBusId) {
+
+  watch(
+    genIsOnBy(EmerGenId),
+    busIsEnergizedBy(AcBusOneId) when switchIs(AcEssFeedButtonId, AcEssFeedButton.Norm),
+    busIsEnergizedBy(AcBusTwoId) when switchIs(AcEssFeedButtonId, AcEssFeedButton.Alt)
+  )
+  { case (bus, supplyChain) => power(bus +: supplyChain) }
   { unpower() }
 }
 
 class DcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusOneId) {
 
-  watch(contIsClosedBy(TrOneContactorId))
-  { supplyChain => power(supplyChain) }
+  watch(
+    trIsPoweredBy(TrOneId),
+    busIsEnergizedBy(DcBatteryBusId, DcBusTwoId)
+  )
+  {
+    case (TrOneId, _) => power(TrOneId)
+    case (DcBatteryBusId, supplyChain) => power(DcBatteryBusId +: supplyChain)
+  }
   { unpower() }
 }
 
 class DcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, DcBusTwoId) {
 
-  watch(contIsClosedBy(TrTwoContactorId))
-  { supplyChain => power(supplyChain) }
+  watch(
+    trIsPoweredBy(TrTwoId),
+    busIsEnergizedBy(DcBatteryBusId, DcBusOneId)
+  )
+  {
+    case (TrTwoId, _) => power(TrTwoId)
+    case (DcBatteryBusId, supplyChain) => power(DcBatteryBusId +: supplyChain)
+  }
   { unpower() }
 }
 
 class DcBatteryBus()(implicit ctx: SimulationContext) extends Bus(ctx, DcBatteryBusId) {
 
   watch(
-    contIsClosedBy(DcTieOneContId, DcBusOneId),
-    contIsClosedBy(DcTieTwoContId, DcBusTwoId),
-    contIsClosedBy(BatteryOneContId, BatteryOneId),
-    contIsClosedBy(BatteryTwoContId, BatteryTwoId)
+    busIsEnergizedBy(DcBusOneId, TrOneId),
+    busIsEnergizedBy(DcBusTwoId, TrTwoId)
   )
-  { supplyChain => power(supplyChain) }
+  { case (bus, supplyChain) => power(bus +: supplyChain) }
   { unpower() }
 }
 
@@ -108,10 +138,8 @@ class HotBus(ctx: SimulationContext, busId: DeviceId, batteryId: DeviceId)
     extends Bus(ctx, busId) {
 
   watch(deviceIsInitialized(batteryId))
-  {
-    case true => power(Seq(batteryId))
-    case false => unpower()
-  }
+  { batt => power(Seq(batt)) }
+  { unpower() }
 }
 
 class HotBusOne()(implicit ctx: SimulationContext) extends HotBus(ctx, HotBusOneId, BatteryOneId)
@@ -121,11 +149,13 @@ class HotBusTwo()(implicit ctx: SimulationContext) extends HotBus(ctx, HotBusTwo
 class DcEssentialBus()(implicit ctx: SimulationContext) extends Bus(ctx, DcEssBusId) {
 
   watch(
-    contIsClosedBy(DcEssTieContId),
-    contIsClosedBy(StaticInvTwoContId),
-    contIsClosedBy(DcEssTrContId)
+    busIsEnergizedBy(DcBatteryBusId) when (trIsPowered(TrOneId) and trIsPowered(TrTwoId)),
+    trIsPoweredBy(EssTrId) when (trIsUnpowered(TrOneId) or trIsUnpowered(TrTwoId))
   )
-  { supplier => power(supplier) }
+  {
+    case (DcBatteryBusId, supplyChain) => power(DcBatteryBusId +: supplyChain)
+    case (EssTrId, supplyChain) => power(EssTrId)
+  }
   { unpower() }
 }
 

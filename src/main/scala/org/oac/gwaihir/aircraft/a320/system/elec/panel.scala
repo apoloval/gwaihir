@@ -14,9 +14,23 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package org.oac.gwaihir
+package org.oac.gwaihir.aircraft.a320.system.elec
 
-package object core {
+import org.oac.gwaihir.aircraft.a320.common.Switch
+import org.oac.gwaihir.core.SimulationContext
 
-  type BooleanCondition = Condition[Unit]
+class AcEssFeedButton(implicit val _ctx: SimulationContext) extends Switch(AcEssFeedButtonId)(_ctx)
+
+object AcEssFeedButton {
+
+  val Norm = Switch.SwitchedOff
+  val Alt = Switch.SwitchedOn
+}
+
+class AcBusTieButton(implicit val _ctx: SimulationContext) extends Switch(AcBusTieButtonId)(_ctx)
+
+object AcBusTieButton {
+
+  val Off = Switch.SwitchedOff
+  val Auto = Switch.SwitchedOn
 }

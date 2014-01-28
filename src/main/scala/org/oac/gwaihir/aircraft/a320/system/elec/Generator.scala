@@ -22,14 +22,20 @@ trait GeneratorConditions {
 
   self: ConditionEvaluator =>
 
-  /** A condition consisting of the given generator to be on given state. */
-  def genIs(genId: DeviceId, state: Generator.State): BooleanCondition  = deviceIs(genId, state)
-
   /** A condition consisting of the given generator to be on. */
-  def genIsOn(genId: DeviceId): BooleanCondition = genIs(genId, Generator.PowerOn)
+  def genIsOn(genId: DeviceId): Condition[DeviceId] = deviceIs(genId, Generator.PowerOn)
+
+  /** A condition consisting of the given generator to be on.
+    *
+    * This is a convenience function to adapt genIsOn() to produce a
+    * Condition[(DeviceId, Seq[DeviceId])], with the gen as first element of the tuple and
+    * Seq.empty and second element.
+    */
+  def genIsOnBy(genId: DeviceId): Condition[(DeviceId, Seq[DeviceId])] =
+    genIsOn(genId).map { gen => Some(gen, Seq.empty) }
 
   /** A condition consisting of the given generator to be off. */
-  def genIsOff(genId: DeviceId): BooleanCondition  = genIs(genId, Generator.PowerOff)
+  def genIsOff(genId: DeviceId): Condition[DeviceId]  = deviceIs(genId, Generator.PowerOff)
 }
 
 class Generator(val ctx: SimulationContext, val id: DeviceId)
@@ -47,6 +53,7 @@ class GenOne()(implicit ctx: SimulationContext) extends Generator(ctx, GenOneId)
 class GenTwo()(implicit ctx: SimulationContext) extends Generator(ctx, GenTwoId)
 class ApuGen()(implicit ctx: SimulationContext) extends Generator(ctx, ApuGenId)
 class ExtPower()(implicit ctx: SimulationContext) extends Generator(ctx, ExtPowerId)
+class EmerGen()(implicit ctx: SimulationContext) extends Generator(ctx, EmerGenId)
 
 object Generator {
 

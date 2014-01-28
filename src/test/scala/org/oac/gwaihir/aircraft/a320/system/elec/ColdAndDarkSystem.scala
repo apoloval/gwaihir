@@ -29,4 +29,6 @@ trait ColdAndDarkSystem {
   val sys = new ElectricalSystem()
   sys.init()
   exec.loop()
+  sys.acBusTieButton.switch(AcBusTieButton.Auto)
+  exec.loop()
 }

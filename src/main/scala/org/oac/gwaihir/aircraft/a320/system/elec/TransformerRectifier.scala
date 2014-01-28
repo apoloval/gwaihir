@@ -23,24 +23,25 @@ trait TransformerRectifierConditions {
   self: ConditionEvaluator =>
 
   /** A condition consisting of the given TR to be in the given state. */
-  def trIs(trId: DeviceId, state: TransformerRectifier.State): BooleanCondition =
+  def trIs(trId: DeviceId, state: TransformerRectifier.State): Condition[DeviceId] =
     deviceIs(trId, state)
 
   /** A condition consisting of the given TR to be powered. */
-  def trIsPowered(trId: DeviceId): BooleanCondition = deviceIs[TransformerRectifier.State](trId) {
-    case TransformerRectifier.Powered(_) => true
-    case _ => false
-  }
+  def trIsPowered(trId: DeviceId): Condition[DeviceId] =
+    deviceIs[TransformerRectifier.State, DeviceId](trId) {
+      case TransformerRectifier.Powered(_) => Some(trId)
+      case _ => None
+    }
 
   /** A condition consisting of the given TR to be powered by a supply. */
-  def trIsPoweredBy(trId: DeviceId): Condition[Seq[DeviceId]] =
-    deviceStateChanged[TransformerRectifier.State, Seq[DeviceId]](trId) {
-      case TransformerRectifier.Powered(supply) => Some(trId +: supply)
+  def trIsPoweredBy(trId: DeviceId): Condition[(DeviceId, Seq[DeviceId])] =
+    deviceStateChanged[TransformerRectifier.State](trId).map {
+      case (_, TransformerRectifier.Powered(supply)) => Some(trId -> supply)
       case _ => None
     }
 
   /** A condition consisting of the given TR to be unpowered. */
-  def trIsUnpowered(trId: DeviceId): BooleanCondition =
+  def trIsUnpowered(trId: DeviceId): Condition[DeviceId] =
     deviceIs(trId, TransformerRectifier.Unpowered)
 }
 
@@ -60,14 +61,25 @@ abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId
 class TrOne(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrOneId) {
 
   watch(busIsEnergizedBy(AcBusOneId))
-  { supply => power(supply)}
+  { case (bus, supplyChain) => power(bus +: supplyChain) }
   { unpower() }
 }
 
 class TrTwo(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, TrTwoId) {
 
   watch(busIsEnergizedBy(AcBusTwoId))
-  { supply => power(supply)}
+  { case (bus, supplyChain) => power(bus +: supplyChain) }
+  { unpower() }
+}
+
+class EssTr(implicit ctx: SimulationContext) extends TransformerRectifier(ctx, EssTrId) {
+
+  watch(
+    busIsEnergizedBy(AcEssBusId) when (
+      (trIsUnpowered(TrOneId) or trIsUnpowered(TrTwoId)) and (genIsOff(EmerGenId))),
+    genIsOnBy(EmerGenId)
+  )
+  { case (source, supplyChain) => power(source +: supplyChain) }
   { unpower() }
 }
 
