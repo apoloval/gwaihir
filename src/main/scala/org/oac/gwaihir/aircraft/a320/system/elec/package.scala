@@ -47,6 +47,6 @@ package object elec {
   val HotBusOneId = DcSubsystemId / "HotBus1"
   val HotBusTwoId = DcSubsystemId / "HotBus2"
 
-  val AcBusTieButtonId = PanelSubsystemId / "BusTieBtn"
-  val AcEssFeedButtonId = PanelSubsystemId / "EssFeedBtn"
+  val AcBusTieSwitchId = PanelSubsystemId / "BusTieSw"
+  val AcEssFeedSwitchId = PanelSubsystemId / "EssFeedSw"
 }

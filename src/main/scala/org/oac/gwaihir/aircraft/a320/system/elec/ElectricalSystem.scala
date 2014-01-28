@@ -51,6 +51,6 @@ class ElectricalSystem(implicit val ctx: SimulationContext) extends DeviceSystem
   val essTr = newDevice(new EssTr())
 
   // Panel 
-  val acEssFeedButton = newDevice(new AcEssFeedButton())
-  val acBusTieButton = newDevice(new AcBusTieButton())
+  val acEssFeedSwitch = newDevice(new AcEssFeedSwitch())
+  val acBusTieSwitch = newDevice(new AcBusTieSwitch())
 }

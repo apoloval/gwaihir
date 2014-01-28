@@ -19,17 +19,17 @@ package org.oac.gwaihir.aircraft.a320.system.elec
 import org.oac.gwaihir.aircraft.a320.common.Switch
 import org.oac.gwaihir.core.SimulationContext
 
-class AcEssFeedButton(implicit val _ctx: SimulationContext) extends Switch(AcEssFeedButtonId)(_ctx)
+class AcEssFeedSwitch(implicit val _ctx: SimulationContext) extends Switch(AcEssFeedSwitchId)(_ctx)
 
-object AcEssFeedButton {
+object AcEssFeedSwitch {
 
   val Norm = Switch.SwitchedOff
   val Alt = Switch.SwitchedOn
 }
 
-class AcBusTieButton(implicit val _ctx: SimulationContext) extends Switch(AcBusTieButtonId)(_ctx)
+class AcBusTieSwitch(implicit val _ctx: SimulationContext) extends Switch(AcBusTieSwitchId)(_ctx)
 
-object AcBusTieButton {
+object AcBusTieSwitch {
 
   val Off = Switch.SwitchedOff
   val Auto = Switch.SwitchedOn

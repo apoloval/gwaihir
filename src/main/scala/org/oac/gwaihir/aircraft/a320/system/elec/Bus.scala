@@ -69,9 +69,9 @@ class AcBusOne()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusOneId) {
 
   watch(
     genIsOn(GenOneId),
-    genIsOn(ExtPowerId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
-    genIsOn(ApuGenId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
-    genIsOn(GenTwoId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto))
+    genIsOn(ExtPowerId) when switchIs(AcBusTieSwitchId, AcBusTieSwitch.Auto),
+    genIsOn(ApuGenId) when switchIs(AcBusTieSwitchId, AcBusTieSwitch.Auto),
+    genIsOn(GenTwoId) when switchIs(AcBusTieSwitchId, AcBusTieSwitch.Auto))
   { bus => power(bus) }
   { unpower() }
 }
@@ -80,9 +80,9 @@ class AcBusTwo()(implicit ctx: SimulationContext) extends Bus(ctx, AcBusTwoId) {
 
   watch(
     genIsOn(GenTwoId),
-    genIsOn(ExtPowerId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
-    genIsOn(ApuGenId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto),
-    genIsOn(GenOneId) when switchIs(AcBusTieButtonId, AcBusTieButton.Auto))
+    genIsOn(ExtPowerId) when switchIs(AcBusTieSwitchId, AcBusTieSwitch.Auto),
+    genIsOn(ApuGenId) when switchIs(AcBusTieSwitchId, AcBusTieSwitch.Auto),
+    genIsOn(GenOneId) when switchIs(AcBusTieSwitchId, AcBusTieSwitch.Auto))
   { bus => power(bus) }
   { unpower() }
 }
@@ -91,8 +91,8 @@ class AcEssBus()(implicit ctx: SimulationContext) extends Bus(ctx, AcEssBusId) {
 
   watch(
     genIsOnBy(EmerGenId),
-    busIsEnergizedBy(AcBusOneId) when switchIs(AcEssFeedButtonId, AcEssFeedButton.Norm),
-    busIsEnergizedBy(AcBusTwoId) when switchIs(AcEssFeedButtonId, AcEssFeedButton.Alt)
+    busIsEnergizedBy(AcBusOneId) when switchIs(AcEssFeedSwitchId, AcEssFeedSwitch.Norm),
+    busIsEnergizedBy(AcBusTwoId) when switchIs(AcEssFeedSwitchId, AcEssFeedSwitch.Alt)
   )
   { case (bus, supplyChain) => power(bus +: supplyChain) }
   { unpower() }

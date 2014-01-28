@@ -60,7 +60,7 @@ class BusTest extends WordSpec with Matchers {
 
     "be de-energized when GEN 1 is off and other sources are on but BUS TIE button is off" in new ColdAndDarkSystem {
       sys.acBusOne.state should be (Bus.DeEnergized)
-      sys.acBusTieButton.switch(AcBusTieButton.Off)
+      sys.acBusTieSwitch.switch(AcBusTieSwitch.Off)
       sys.extPower.powerOn()
       sys.genTwo.powerOn()
       exec.loop()
@@ -108,7 +108,7 @@ class BusTest extends WordSpec with Matchers {
 
     "be de-energized when GEN 2 is off and other sources are on but BUS TIE button is off" in new ColdAndDarkSystem {
       sys.acBusTwo.state should be (Bus.DeEnergized)
-      sys.acBusTieButton.switch(AcBusTieButton.Off)
+      sys.acBusTieSwitch.switch(AcBusTieSwitch.Off)
       sys.extPower.powerOn()
       sys.genOne.powerOn()
       exec.loop()
@@ -126,7 +126,7 @@ class BusTest extends WordSpec with Matchers {
 
     "be de-energized by a powered AC BUS 1 when AC ESS switch is ALT" in new ColdAndDarkSystem {
       sys.acEssBus.state should be (Bus.DeEnergized)
-      sys.acEssFeedButton.switch(AcEssFeedButton.Alt)
+      sys.acEssFeedSwitch.switch(AcEssFeedSwitch.Alt)
       sys.acBusOne.power(GenOneId)
       exec.loop()
       sys.acEssBus.state should be (Bus.DeEnergized)
@@ -134,7 +134,7 @@ class BusTest extends WordSpec with Matchers {
 
     "be energized by a powered AC BUS 2 when AC ESS switch is ALT" in new ColdAndDarkSystem {
       sys.acEssBus.state should be (Bus.DeEnergized)
-      sys.acEssFeedButton.switch(AcEssFeedButton.Alt)
+      sys.acEssFeedSwitch.switch(AcEssFeedSwitch.Alt)
       sys.acBusTwo.power(GenTwoId)
       exec.loop()
       sys.acEssBus.state should be (Bus.Energized(AcBusTwoId, GenTwoId))
