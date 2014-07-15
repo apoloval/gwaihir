@@ -3,12 +3,7 @@ package gwaihir.core
 /** A simulated device. */
 trait Device {
 
-  private var _taskExecutor: Option[TaskExecutor] = None
+  def name: String
 
-  implicit def taskExecutor: TaskExecutor = _taskExecutor.getOrElse(throw new IllegalStateException(
-    s"cannot access task executor from device: missing initialization?"))
-
-  def init(taskExecutor: TaskExecutor): Unit = {
-    _taskExecutor = Some(taskExecutor)
-  }
+  protected def propName(subname: String) = s"$subname/$subname"
 }
