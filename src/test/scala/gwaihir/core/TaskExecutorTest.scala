@@ -16,9 +16,9 @@
 
 package gwaihir.core
 
-import scala.concurrent.duration._
+import org.scalatest.{FlatSpec, Matchers}
 
-import org.scalatest.{Matchers, FlatSpec}
+import scala.concurrent.duration._
 
 class TaskExecutorTest extends FlatSpec with Matchers {
 
