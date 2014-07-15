@@ -21,7 +21,7 @@ case class StateChangedEvent[State](from: Option[State], to: State)
 /** An object that behaves as a state machine. */
 trait StateMachine[State] {
 
-  self: Device with SimulationContextAware =>
+  self: DeprecatedDevice with SimulationContextAware =>
 
   private var _state: State = initialState
 

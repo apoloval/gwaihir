@@ -39,7 +39,7 @@ trait GeneratorConditions {
 }
 
 class Generator(val ctx: SimulationContext, val id: DeviceId)
-    extends Device with StateMachine[Generator.State] {
+    extends DeprecatedDevice with StateMachine[Generator.State] {
 
   import Generator._
 

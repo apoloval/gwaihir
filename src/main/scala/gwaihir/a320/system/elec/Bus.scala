@@ -51,7 +51,7 @@ trait BusConditions {
 }
 
 abstract class Bus(val ctx: SimulationContext, val id: DeviceId)
-    extends Device with StateMachine[Bus.State]
+    extends DeprecatedDevice with StateMachine[Bus.State]
     with ConditionEvaluator with ElectricalSystemConditions {
 
   import Bus._

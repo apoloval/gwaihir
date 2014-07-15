@@ -32,7 +32,7 @@ trait SwitchConditions {
 }
 
 class Switch(val id: DeviceId)(implicit val ctx: SimulationContext)
-      extends Device with StateMachine[Switch.State] {
+      extends DeprecatedDevice with StateMachine[Switch.State] {
 
   import Switch._
 

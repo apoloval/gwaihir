@@ -14,29 +14,29 @@
  * see <http://www.gnu.org/licenses/>.
  */
 
-package gwaihir.a320.system.elec
+package gwaihir.core
 
-import gwaihir.core._
-import gwaihir.units.{Amperes, AmpereHours}
+/** An object representing an aircraft device being simulated. */
+trait DeprecatedDevice extends SimulationContextAware {
 
-class Battery(val ctx: SimulationContext, val id: DeviceId)
-    extends DeprecatedDevice with StateMachine[Battery.State] {
+  /** Obtain the ID for this device. */
+  def id: DeviceId
 
-  var charge: AmpereHours = 23.0
-  var flow: Amperes = 0.0
-
-  def initialState = Battery.StandBy
+  /** Initialize the device. */
+  def init()
 }
 
-class BatteryOne(implicit ctx: SimulationContext) extends Battery(ctx, BatteryOneId)
+/** A special case of device that conforms a system of devices. */
+trait DeviceSystem extends DeprecatedDevice {
 
-class BatteryTwo(implicit ctx: SimulationContext) extends Battery(ctx, BatteryTwoId)
+  private var devs: Set[DeprecatedDevice] = Set.empty
 
+  protected def newDevice[T <: DeprecatedDevice](dev: T) : T = {
+    devs = devs + dev
+    dev
+  }
 
-object Battery {
-
-  sealed trait State
-  object StandBy extends State
-  object Supplying extends State
-  object Recharging extends State
+  override final def init() {
+    devs.foreach(dev => dev.init())
+  }
 }

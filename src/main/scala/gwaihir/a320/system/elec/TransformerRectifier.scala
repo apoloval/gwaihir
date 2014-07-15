@@ -45,7 +45,7 @@ trait TransformerRectifierConditions {
     deviceIs(trId, TransformerRectifier.Unpowered)
 }
 
-abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId) extends Device
+abstract class TransformerRectifier(val ctx: SimulationContext, val id: DeviceId) extends DeprecatedDevice
     with SimulationContextAware with StateMachine[TransformerRectifier.State]
     with ConditionEvaluator with ElectricalSystemConditions {
 
