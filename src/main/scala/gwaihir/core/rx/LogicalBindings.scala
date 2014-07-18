@@ -1,6 +1,6 @@
 package gwaihir.core.rx
 
-trait BooleanBindings {
+trait LogicalBindings {
 
   implicit class BooleanStreamPimp(stream: RxStream[Boolean]) {
 
@@ -19,4 +19,4 @@ trait BooleanBindings {
   }
 }
 
-object BooleanBindings extends BooleanBindings
+object LogicalBindings extends LogicalBindings

@@ -2,7 +2,7 @@ package gwaihir.core.rx
 
 import org.scalatest.{Matchers, FlatSpec}
 
-class BooleanBindingsTest extends FlatSpec with Matchers with BooleanBindings {
+class LogicalBindingsTest extends FlatSpec with Matchers with LogicalBindings {
 
   "Logical bindings" must "bind with not operator" in {
     val p1 = Property(true)
