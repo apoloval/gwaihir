@@ -18,14 +18,22 @@ class Property[A](name: String, initialValue: A) extends RxStream[A] {
   private var value: Option[A] = Some(initialValue)
   private var upstream: Option[RxStream[A]] = None
 
-  override def get = value.orElse(upstream.map(_.get)).get
+  override def toString = s"$name (${value.getOrElse("undefined")})"
+
+  override def get = {
+    if (!value.isDefined) { value = upstream.map(_.get) }
+    value.get
+  }
 
   override def onAvailable(listener: (this.type) => Unit) = listeners.addListener(listener)
 
   def bind(stream: RxStream[A]): Unit = {
     upstream = Some(stream)
     invalidateValue()
-    stream.onAvailable(invalidateValue())
+    stream.onAvailable {
+      invalidateValue()
+      listeners.invokeListeners(this)
+    }
   }
 
   def isBounded: Boolean = upstream.isDefined

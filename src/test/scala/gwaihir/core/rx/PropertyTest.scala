@@ -39,6 +39,17 @@ class PropertyTest extends FlatSpec with Matchers {
     p1.get should be (5)
   }
 
+  it must "be bounded in chain" in {
+    val p1 = Property(7)
+    val p2 = Property(p1)
+    val p3 = Property(p2)
+    val p4 = Property(p3)
+    p1.set(0)
+    p2.get should be (0)
+    p3.get should be (0)
+    p4.get should be (0)
+  }
+
   it must "be instantiated from a bounded property" in {
     val p1 = Property(7)
     val p2 = Property(p1)
@@ -54,5 +65,4 @@ class PropertyTest extends FlatSpec with Matchers {
 
     an [IllegalArgumentException] should be thrownBy { p2.set(1) }
   }
-
 }
