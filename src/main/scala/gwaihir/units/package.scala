@@ -18,6 +18,24 @@ package gwaihir
 
 package object units {
 
+  type Power = squants.energy.Power
+  val Power = squants.energy.Power
+
+  val Milliwatts = squants.energy.Milliwatts
+  val Watts = squants.energy.Watts
+  val Kilowatts = squants.energy.Kilowatts
+
+  type Current = squants.electro.ElectricCurrent
+  val Current = squants.electro.ElectricCurrent
+
+  val Amperes = squants.electro.Amperes
+  val Milliamperes = squants.electro.Milliamperes
+
+  val ZeroCurrent = Amperes(0.0)
+
+  @deprecated("Use new unit types instead")
   type AmpereHours = Double
+
+  @deprecated("Use new unit types instead")
   type Amperes = Double
 }
