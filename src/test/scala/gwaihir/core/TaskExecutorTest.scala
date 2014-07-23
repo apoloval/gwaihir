@@ -45,7 +45,7 @@ class TaskExecutorTest extends FlatSpec with Matchers {
     exec.schedule(100.milliseconds) { scheduledDoneOn = System.currentTimeMillis() }
     exec.submit { immediateDoneOn = System.currentTimeMillis() }
     exec.loop()
-    (immediateDoneOn - submittedOn) should be < 10l
+    (immediateDoneOn - submittedOn) should be < 20l
     (scheduledDoneOn - submittedOn) should be >= 100l
   }
 
